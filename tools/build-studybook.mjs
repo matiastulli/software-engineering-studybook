@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import { Marked } from "./marked.esm.js";
 
 // Repo root, resolved from this file's location so the build works on any machine.
@@ -50,6 +51,25 @@ marked.use({
     }
   }
 });
+
+/* ---------- last-commit times ---------- */
+// The embedded mtime only drives live-reload change detection, which is inert in the static
+// export. Taking it from git instead of the filesystem keeps the build reproducible: a fresh
+// clone has checkout mtimes, so stat() would make every clone emit a different index.html.
+function commitTimes() {
+  const map = new Map();
+  try {
+    const out = execFileSync("git", ["log", "--format=C%ct", "--name-only", "--no-renames", "--", "theory"],
+                             { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    let t = 0;
+    for (const line of out.split("\n")) {
+      if (line.startsWith("C")) t = Number(line.slice(1)) || 0;
+      else if (line && !map.has(line)) map.set(line, t);   // newest commit wins
+    }
+  } catch { /* no git, or not a repo: fall back to filesystem mtime */ }
+  return map;
+}
+const COMMITTED = commitTimes();
 
 /* ---------- collect ---------- */
 function walk(dir, acc = []) {
@@ -110,7 +130,7 @@ for (const abs of files) {
   const gk = groupKeyFor(rel);
 
   const meta = { path: rel, file: path.basename(rel), title: titleFor(rel, src), group: gk,
-                 lines, words, mtime: Math.floor(stat.mtimeMs / 1000) };
+                 lines, words, mtime: COMMITTED.get("theory/" + rel) ?? Math.floor(stat.mtimeMs / 1000) };
   docs[rel] = { ...meta, html, minutes: Math.max(1, Math.round(words / 220)) };
   delete docs[rel].group;
   if (!byGroup.has(gk)) byGroup.set(gk, []);
