@@ -16,7 +16,7 @@ Interview prep for senior data engineering, system design and Forward Deployed E
 | [data-engineering/](data-engineering/) | SQL, PySpark, Snowflake performance & cost, Databricks | [sql-advanced.md](data-engineering/sql-advanced.md) |
 | [backend/](backend/) | Python, graph algorithms, Node/Express, REST APIs & webhooks, web performance & security | [python-general.md](backend/python-general.md) |
 | [frontend/](frontend/) | React and web vocabulary for engineers whose home turf isn't frontend | [frontend-concepts.md](frontend/frontend-concepts.md) |
-| [ai/](ai/llm-prompting-and-evals.md) | Building LLM agents: prompts, guardrails, evals | [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) |
+| [ai/](ai/llm-prompting-and-evals.md) | Working with LLMs: prompting, agents and evals | [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) |
 | [questions/](questions/README.md) | The Q&A bank: model answers with collapsed reveals, used by mix mode | [questions/README.md](questions/README.md) |
 
 ### Every doc
@@ -46,7 +46,7 @@ Interview prep for senior data engineering, system design and Forward Deployed E
 | [react.md](frontend/react.md) | Hooks (the canonical table), effects and the fetch race, StrictMode, memoization, controlled forms, TypeScript discriminated unions |
 | [frontend-concepts.md](frontend/frontend-concepts.md) | Hook vs webhook, middleware in three frameworks, components/props/state, CSR vs SSR vs SSG, bundlers |
 | **AI** | |
-| [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) | The agent loop, system prompt structure, guardrails, structured outputs, evals and judge calibration, latency and cost levers |
+| [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) | Using Claude Code in a live interview (Tetris walkthrough), the agent loop, system prompt structure, structured outputs, evals and judge calibration, latency and cost |
 
 ---
 

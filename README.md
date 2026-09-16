@@ -37,7 +37,7 @@ answer its self-check out loud.
 | `theory/backend/` | Python, graph algorithms, Node/Express, REST APIs & webhooks, web performance & security |
 | `theory/cloud/` | The core toolkit (one default tool per job) and a 10 / 10k / 100k scale ladder |
 | `theory/software-design/` | Design patterns and architecture styles, kept to the set that actually gets asked |
-| `theory/ai/` | LLM agents: prompting, guardrails, evals |
+| `theory/ai/` | Prompting a coding agent in a live interview, and building LLM agents: guardrails, evals |
 | `theory/frontend/` | React and web vocabulary for engineers whose home turf isn't the frontend |
 | `theory/questions/` | The 198-question bank with model answers, which powers mix mode |
 | `practical/` | Hands-on drills: 25 Python exercises, SQL and Snowflake scripts, a PySpark set, and typing drills for rebuilding fluency under time pressure |
