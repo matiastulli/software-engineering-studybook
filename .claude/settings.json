@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node tools/build-studybook.mjs)",
+      "Bash(python practical/**)"
+    ]
+  }
+}

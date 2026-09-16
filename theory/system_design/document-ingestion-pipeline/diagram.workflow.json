@@ -1,0 +1,255 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Document Ingestion Pipeline — AWS + LLM",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "intake",
+      "label": "Intake"
+    },
+    {
+      "id": "sfn",
+      "label": "Step Functions · one run per document"
+    },
+    {
+      "id": "review",
+      "label": "Human review",
+      "variant": "exception"
+    },
+    {
+      "id": "stores",
+      "label": "Stores + alarms"
+    }
+  ],
+  "phases": [
+    {
+      "id": "ingest",
+      "label": "Ingest",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "extract",
+      "label": "Validate + extract",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "decide",
+      "label": "Decide + store",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "landing",
+    "starter",
+    "validate",
+    "textract",
+    "extract",
+    "rules",
+    "postgres",
+    "snowflake"
+  ],
+  "nodes": [
+    {
+      "id": "landing",
+      "lane": "intake",
+      "col": 0,
+      "type": "cloud",
+      "label": "S3 landing",
+      "sublabel": "email · upload · API · SFTP",
+      "tag": "KMS",
+      "width": 132
+    },
+    {
+      "id": "starter",
+      "lane": "intake",
+      "col": 1,
+      "type": "messagebus",
+      "label": "SQS → Starter",
+      "sublabel": "reserved concurrency",
+      "tag": "backpressure",
+      "width": 132
+    },
+    {
+      "id": "validate",
+      "lane": "sfn",
+      "col": 1,
+      "type": "security",
+      "label": "Validate",
+      "sublabel": "type · size · hash dedupe",
+      "width": 132
+    },
+    {
+      "id": "textract",
+      "lane": "sfn",
+      "col": 2,
+      "type": "cloud",
+      "label": "Textract async",
+      "sublabel": "SNS callback",
+      "width": 132
+    },
+    {
+      "id": "extract",
+      "lane": "sfn",
+      "col": 3,
+      "type": "backend",
+      "label": "Classify + extract",
+      "sublabel": "Bedrock tool schema",
+      "tag": "typed JSON",
+      "width": 132
+    },
+    {
+      "id": "rules",
+      "lane": "sfn",
+      "col": 4,
+      "type": "security",
+      "label": "Rules + confidence",
+      "sublabel": "sums · dates · vendor · PO",
+      "width": 132
+    },
+    {
+      "id": "review_ui",
+      "lane": "review",
+      "col": 5,
+      "type": "frontend",
+      "label": "Review queue + UI",
+      "sublabel": "waitForTaskToken",
+      "tag": "human in the loop",
+      "width": 132
+    },
+    {
+      "id": "dlq",
+      "lane": "stores",
+      "col": 2,
+      "type": "messagebus",
+      "label": "DLQ + alarm",
+      "sublabel": "reason code",
+      "width": 132
+    },
+    {
+      "id": "snowflake",
+      "lane": "stores",
+      "col": 5,
+      "type": "database",
+      "label": "Snowflake",
+      "sublabel": "STP rate · vendor accuracy",
+      "width": 132
+    },
+    {
+      "id": "postgres",
+      "lane": "stores",
+      "col": 4,
+      "type": "database",
+      "label": "Postgres",
+      "sublabel": "documents · line_items",
+      "tag": "source of truth",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "id": "land-start",
+      "from": "landing",
+      "to": "starter",
+      "label": "ObjectCreated"
+    },
+    {
+      "id": "start-validate",
+      "from": "starter",
+      "to": "validate",
+      "label": "StartExecution",
+      "variant": "emphasis"
+    },
+    {
+      "id": "validate-ocr",
+      "from": "validate",
+      "to": "textract"
+    },
+    {
+      "id": "ocr-extract",
+      "from": "textract",
+      "to": "extract",
+      "label": "OCR text"
+    },
+    {
+      "id": "extract-rules",
+      "from": "extract",
+      "to": "rules"
+    },
+    {
+      "id": "high-confidence",
+      "from": "rules",
+      "to": "postgres",
+      "label": "high",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "low-confidence",
+      "from": "rules",
+      "to": "review_ui",
+      "label": "low",
+      "variant": "security",
+      "role": "branch"
+    },
+    {
+      "id": "corrected",
+      "from": "review_ui",
+      "to": "postgres",
+      "label": "corrected + labelled",
+      "variant": "default"
+    },
+    {
+      "id": "retries-exhausted",
+      "from": "textract",
+      "to": "dlq",
+      "label": "retries exhausted",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "report",
+      "from": "postgres",
+      "to": "snowflake",
+      "label": "metrics",
+      "variant": "dashed",
+      "role": "async"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Why Step Functions Standard",
+      "items": [
+        "Runs can wait days for a human",
+        "Execution name = sha256 dedupes documents",
+        "Every step retries with backoff"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Composite confidence",
+      "items": [
+        "LLM output is never trusted alone",
+        "Deterministic rules check sums, dates, PO",
+        "Low score routes to a person, not to Postgres"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Failure modes",
+      "items": [
+        "Poison PDFs → DLQ with a reason code",
+        "Bedrock throttling → capped concurrency",
+        "Reviewer corrections feed the eval set"
+      ]
+    }
+  ]
+}

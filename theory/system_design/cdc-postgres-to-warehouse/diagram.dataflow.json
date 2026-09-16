@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "CDC — Postgres to Warehouse in Under 5 Minutes",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1068,
+      640
+    ]
+  },
+  "stages": [
+    {
+      "label": "Sources"
+    },
+    {
+      "label": "Capture"
+    },
+    {
+      "label": "Transport"
+    },
+    {
+      "label": "Warehouse"
+    },
+    {
+      "label": "Serve"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "Postgres primary",
+      "sublabel": "written by the app",
+      "stage": 0,
+      "row": 0,
+      "height": 64
+    },
+    {
+      "id": "dynamodb",
+      "type": "database",
+      "label": "DynamoDB",
+      "sublabel": "operational NoSQL",
+      "stage": 0,
+      "row": 1,
+      "height": 64
+    },
+    {
+      "id": "dms",
+      "type": "backend",
+      "label": "DMS task",
+      "sublabel": "full load, then CDC",
+      "stage": 1,
+      "row": 0,
+      "tag": "reads the WAL",
+      "height": 64
+    },
+    {
+      "id": "stream_lambda",
+      "type": "backend",
+      "label": "Lambda",
+      "sublabel": "stream forwarder",
+      "stage": 1,
+      "row": 1,
+      "height": 64
+    },
+    {
+      "id": "kinesis",
+      "type": "messagebus",
+      "label": "Kinesis",
+      "sublabel": "4 shards",
+      "stage": 2,
+      "row": 0,
+      "tag": "ordered per key",
+      "height": 64
+    },
+    {
+      "id": "saas",
+      "type": "external",
+      "label": "SaaS APIs",
+      "sublabel": "CRM · billing",
+      "stage": 2,
+      "row": 2,
+      "height": 64
+    },
+    {
+      "id": "lake",
+      "type": "cloud",
+      "label": "S3 raw",
+      "sublabel": "append-only change log",
+      "stage": 3,
+      "row": 0,
+      "tag": "Parquet by dt",
+      "height": 64
+    },
+    {
+      "id": "snow_raw",
+      "type": "database",
+      "label": "Snowflake RAW",
+      "sublabel": "every change row",
+      "stage": 3,
+      "row": 1,
+      "height": 64
+    },
+    {
+      "id": "curated",
+      "type": "database",
+      "label": "Snowflake CURATED",
+      "sublabel": "current state",
+      "stage": 3,
+      "row": 2,
+      "tag": "idempotent MERGE",
+      "height": 64
+    },
+    {
+      "id": "dbt",
+      "type": "backend",
+      "label": "dbt",
+      "sublabel": "staging → marts",
+      "stage": 4,
+      "row": 2,
+      "height": 64
+    },
+    {
+      "id": "consumers",
+      "type": "frontend",
+      "label": "Dashboards · ML",
+      "sublabel": "analysts + features",
+      "stage": 4,
+      "row": 3,
+      "height": 64
+    }
+  ],
+  "flows": [
+    {
+      "from": "postgres",
+      "to": "dms",
+      "label": "WAL slot",
+      "classification": "logical",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "dynamodb",
+      "to": "stream_lambda",
+      "label": "Streams",
+      "classification": "24 h",
+      "variant": "default",
+      "route": "straight"
+    },
+    {
+      "from": "dms",
+      "to": "kinesis",
+      "label": "change events",
+      "classification": "key = table + PK",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "stream_lambda",
+      "to": "kinesis",
+      "label": "change events",
+      "variant": "default",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          530,
+          274
+        ]
+      ],
+      "labelSegment": 0
+    },
+    {
+      "from": "kinesis",
+      "to": "lake",
+      "label": "Firehose",
+      "classification": "60 s buffer",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "lake",
+      "to": "snow_raw",
+      "label": "Snowpipe",
+      "classification": "auto-ingest",
+      "variant": "emphasis",
+      "labelAt": [
+        745,
+        217
+      ]
+    },
+    {
+      "from": "saas",
+      "to": "snow_raw",
+      "label": "Fivetran hourly",
+      "variant": "dashed"
+    },
+    {
+      "from": "snow_raw",
+      "to": "curated",
+      "label": "MERGE every 2 min",
+      "classification": "ordered by log position",
+      "variant": "emphasis",
+      "labelAt": [
+        745,
+        331
+      ]
+    },
+    {
+      "from": "curated",
+      "to": "dbt",
+      "label": "models",
+      "variant": "default",
+      "route": "straight"
+    },
+    {
+      "from": "dbt",
+      "to": "consumers",
+      "label": "marts",
+      "variant": "default",
+      "labelAt": [
+        960,
+        445
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Change log → current state",
+      "items": [
+        "S3 keeps every change, append-only",
+        "MERGE keeps the latest row per key",
+        "Order by log position, never wall clock"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "The slot trap",
+      "items": [
+        "A stalled consumer pins WAL on the primary",
+        "Alarm on replication slot lag",
+        "Disk fills → primary goes down"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Reprocessing",
+      "items": [
+        "Bad transform → re-run from S3 raw",
+        "No re-extract from the primary",
+        "Schema changes land additive in RAW first"
+      ]
+    }
+  ]
+}

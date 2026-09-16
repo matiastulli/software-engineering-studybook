@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technical Prep Guide — study material</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<style>
+:root{
+  --bg:#0b1017; --bg-alt:#080c12; --panel:#121a24; --panel-2:#18212c;
+  --line:#212c3a; --line-soft:#18212c;
+  --fg:#dde5f0; --fg-dim:#8d9bb0; --fg-faint:#5b6979;
+  --accent:#6ea8fe; --accent-2:#7ee2c0; --accent-3:#f0a868;
+  --code-bg:#070b11; --mark:#3d2f00;
+  --scroll:#273343; --scroll-hover:#3b4a5e;
+  --shadow:0 16px 40px -12px rgba(0,0,0,.6);
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --topbar-h:54px;
+}
+html[data-theme="light"]{
+  --bg:#fbfcfd; --bg-alt:#f3f5f8; --panel:#ffffff; --panel-2:#f4f7fa;
+  --line:#dfe5ed; --line-soft:#eaeff5;
+  --fg:#18212c; --fg-dim:#556173; --fg-faint:#8b97a6;
+  --accent:#2563eb; --accent-2:#0d9276; --accent-3:#b45309;
+  --code-bg:#f5f7fa; --mark:#fff3bf;
+  --scroll:#cfd8e3; --scroll-hover:#aab7c7;
+  --shadow:0 16px 40px -14px rgba(20,35,60,.18);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:15px/1.7 "Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+a{color:var(--accent);text-decoration:none;transition:color .16s var(--ease)}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* ---------- scrollbars ---------- */
+*{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{
+  background:var(--scroll); border-radius:999px;
+  border:3.5px solid transparent; background-clip:content-box;
+  transition:background .2s;
+}
+::-webkit-scrollbar-thumb:hover{background:var(--scroll-hover);background-clip:content-box}
+::-webkit-scrollbar-corner{background:transparent}
+
+/* ---------- layout ---------- */
+#app{display:grid;grid-template-columns:292px minmax(0,1fr) 244px;height:100vh;height:100dvh}
+@media (max-width:1180px){#app{grid-template-columns:274px minmax(0,1fr)} #toc{display:none}}
+@media (max-width:820px){
+  #app{grid-template-columns:minmax(0,1fr)}
+  #sidebar{position:fixed;z-index:40;left:0;top:0;bottom:0;width:292px;
+    transform:translateX(-101%);transition:transform .34s var(--ease-out);box-shadow:var(--shadow)}
+  body.nav-open #sidebar{transform:none}
+  #menu-btn{display:grid !important}
+}
+
+/* ---------- sidebar ---------- */
+#sidebar{background:var(--bg-alt);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{padding:17px 18px 13px;border-bottom:1px solid var(--line-soft)}
+.brand h1{margin:0;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-dim);font-weight:650}
+.brand .sub{margin-top:5px;font-size:11.5px;color:var(--fg-faint);letter-spacing:.01em}
+.search-wrap{padding:13px 14px;border-bottom:1px solid var(--line-soft)}
+#search{
+  width:100%;padding:9px 12px;border-radius:10px;background:var(--panel);
+  border:1px solid var(--line);color:var(--fg);outline:none;font-size:13px;
+  transition:border-color .18s var(--ease), box-shadow .18s var(--ease), background .18s;
+}
+#search:focus{
+  border-color:var(--accent);background:var(--panel-2);
+  box-shadow:0 0 0 3.5px color-mix(in srgb,var(--accent) 15%,transparent);
+}
+#search::placeholder{color:var(--fg-faint)}
+#tree{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 10px 28px;scroll-behavior:smooth}
+.tree-bar{
+  display:flex;align-items:center;gap:8px;padding:9px 15px;
+  border-bottom:1px solid var(--line-soft);font-size:10.5px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--fg-faint);
+}
+#tree-count{font-weight:600}
+#toggle-all{
+  margin-left:auto;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fg-faint);padding:2px 8px;border-radius:6px;border:1px solid transparent;
+  transition:color .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease);
+}
+#toggle-all:hover{color:var(--accent);background:var(--panel);border-color:var(--line)}
+
+.group{margin-bottom:6px;animation:fadeUp .3s var(--ease-out) both}
+.group-title{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  padding:8px 9px;border-radius:8px;font-size:10.5px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--fg-faint);
+  transition:background .18s var(--ease), color .18s var(--ease);
+}
+.group-title:hover{background:var(--panel);color:var(--fg-dim)}
+.group-title .chev{
+  flex:none;width:9px;height:9px;color:var(--fg-faint);
+  transition:transform .28s var(--ease-out);
+}
+.group-title .chev svg{display:block;width:9px;height:9px}
+.group.collapsed .chev{transform:rotate(-90deg)}
+.group-title .label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group-title .count{
+  flex:none;font-weight:600;letter-spacing:0;font-size:10px;
+  background:var(--panel);border:1px solid var(--line-soft);
+  padding:1px 7px;border-radius:999px;
+  transition:background .18s, color .18s, border-color .18s;
+}
+.group.collapsed .group-title .count{background:var(--panel-2);color:var(--fg-dim);border-color:var(--line)}
+
+/* grid-template-rows 1fr→0fr anima la altura sin medirla en JS */
+.group-body{
+  display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows .32s var(--ease-out), opacity .22s var(--ease);
+}
+.group-body > .group-inner{overflow:hidden;padding:2px 0 8px}
+.group.collapsed .group-body{grid-template-rows:0fr;opacity:0}
+.group.collapsed.force-open .group-body{grid-template-rows:1fr;opacity:1}
+.group.collapsed.force-open .chev{transform:none}
+
+.doc{
+  position:relative;display:block;width:100%;text-align:left;padding:8px 11px;
+  border-radius:9px;color:var(--fg-dim);
+  transition:background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+}
+.doc::before{
+  content:"";position:absolute;left:0;top:50%;width:2.5px;height:0;border-radius:999px;
+  background:var(--accent);transform:translateY(-50%);
+  transition:height .26s var(--ease-out);
+}
+.doc:hover{background:var(--panel);color:var(--fg);transform:translateX(2px)}
+.doc.active{background:var(--panel-2);color:var(--fg)}
+.doc.active::before{height:62%}
+.doc .t{display:block;font-size:13.5px;line-height:1.4;font-weight:500}
+.doc .m{display:block;font-size:10.8px;color:var(--fg-faint);margin-top:3px;letter-spacing:.02em}
+.doc.hidden{display:none}
+.group.no-match{display:none}
+.empty{padding:18px 11px;font-size:12.5px;color:var(--fg-faint)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- main ---------- */
+#main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+#topbar{
+  display:flex;align-items:center;gap:11px;padding:0 22px;height:var(--topbar-h);
+  border-bottom:1px solid var(--line);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);
+  position:relative;z-index:20;flex:0 0 auto;
+}
+#menu-btn{display:none;place-items:center}
+#crumb{font-size:12.5px;color:var(--fg-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#crumb b{color:var(--fg-faint);font-weight:500}
+.spacer{flex:1}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;padding:3.5px 10px;border-radius:999px;
+  border:1px solid var(--line);font-size:11px;color:var(--fg-faint);white-space:nowrap;
+  background:color-mix(in srgb,var(--panel) 50%,transparent);
+}
+#live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-2);flex:none}
+#live-dot.pulse{animation:ping 1s var(--ease-out)}
+@keyframes ping{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent-2) 65%,transparent);transform:scale(1)}
+  40%{transform:scale(1.5)}
+  100%{box-shadow:0 0 0 11px transparent;transform:scale(1)}
+}
+.icon-btn{
+  width:31px;height:31px;border-radius:9px;border:1px solid var(--line);
+  display:grid;place-items:center;font-size:14px;color:var(--fg-dim);flex:none;
+  transition:background .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
+}
+.icon-btn:hover{background:var(--panel);color:var(--fg);border-color:var(--fg-faint)}
+.icon-btn:active{transform:scale(.94)}
+#progress{
+  position:absolute;left:0;bottom:-1px;height:2px;width:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  transform:scaleX(0);transform-origin:0 50%;
+  border-radius:0 2px 2px 0;
+}
+
+/* scroller: no global scroll-behavior — smooth is requested explicitly from JS */
+#scroller{
+  position:relative;flex:1;overflow-y:auto;overscroll-behavior:contain;
+  scroll-padding-top:calc(var(--topbar-h) + 26px);
+  contain:paint;
+}
+#doc{max-width:912px;margin:0 auto;padding:44px 44px 45vh}
+@media (max-width:620px){#doc{padding:28px 18px 40vh}}
+#doc.enter{animation:docIn .38s var(--ease-out) both}
+@keyframes docIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+#totop{
+  position:absolute;right:26px;bottom:26px;z-index:25;
+  width:40px;height:40px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--line);color:var(--fg-dim);
+  display:grid;place-items:center;font-size:16px;box-shadow:var(--shadow);
+  opacity:0;transform:translateY(14px) scale(.85);pointer-events:none;
+  transition:opacity .28s var(--ease-out), transform .28s var(--ease-out),
+             background .18s, color .18s, border-color .18s;
+}
+#totop.show{opacity:1;transform:none;pointer-events:auto}
+#totop:hover{background:var(--panel-2);color:var(--accent);border-color:var(--accent)}
+#totop:active{transform:scale(.9)}
+
+/* ---------- typography ---------- */
+#doc h1,#doc h2,#doc h3,#doc h4{
+  line-height:1.3;font-weight:650;
+  scroll-margin-top:calc(var(--topbar-h) + 22px);
+}
+#doc h1{font-size:31px;margin:0 0 22px;letter-spacing:-.022em}
+#doc h2{
+  position:relative;font-size:21px;margin:52px 0 16px;padding-bottom:9px;
+  border-bottom:1px solid var(--line);letter-spacing:-.014em;
+}
+#doc h2::after{
+  content:"";position:absolute;left:0;bottom:-1px;width:34px;height:1px;background:var(--accent);
+}
+#doc h3{font-size:16.5px;margin:32px 0 11px;color:var(--fg);letter-spacing:-.008em}
+#doc h4{font-size:14px;margin:22px 0 8px;color:var(--fg-dim);text-transform:none}
+#doc p{margin:0 0 15px}
+#doc ul,#doc ol{margin:0 0 15px;padding-left:23px}
+#doc li{margin:5px 0}
+#doc li::marker{color:var(--fg-faint)}
+#doc hr{border:none;height:1px;margin:40px 0;
+  background:linear-gradient(90deg,transparent,var(--line) 18%,var(--line) 82%,transparent)}
+#doc strong{color:var(--fg);font-weight:650}
+#doc em{color:var(--fg-dim)}
+#doc blockquote{
+  margin:18px 0;padding:14px 18px;border-left:3px solid var(--accent);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 7%,var(--panel)),var(--panel) 60%);
+  border-radius:0 10px 10px 0;color:var(--fg-dim);
+}
+#doc blockquote p:last-child{margin-bottom:0}
+#doc blockquote strong{color:var(--accent)}
+#doc code{
+  font-family:"JetBrains Mono","Cascadia Code",ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:.855em;background:var(--code-bg);border:1px solid var(--line-soft);
+  padding:1.5px 6px;border-radius:6px;color:var(--accent-3);
+}
+#doc pre{
+  background:var(--code-bg);border:1px solid var(--line);border-radius:12px;
+  padding:16px 18px;overflow-x:auto;overscroll-behavior-x:contain;
+  margin:0 0 18px;line-height:1.6;
+}
+#doc pre code{background:none;border:none;padding:0;color:var(--fg-dim);font-size:12.4px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;white-space:pre}
+#doc table{
+  border-collapse:separate;border-spacing:0;width:100%;margin:0 0 20px;font-size:13.4px;
+  display:block;overflow-x:auto;overscroll-behavior-x:contain;
+  border:1px solid var(--line);border-radius:11px;
+}
+#doc th,#doc td{padding:9px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-soft)}
+#doc th+th,#doc td+td{border-left:1px solid var(--line-soft)}
+#doc th{background:var(--panel-2);font-weight:650;color:var(--fg);white-space:nowrap}
+#doc tbody tr{transition:background .14s}
+#doc tbody tr:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+#doc tbody tr:last-child td{border-bottom:none}
+#doc td code{white-space:nowrap}
+#doc input[type=checkbox]{margin-right:8px;accent-color:var(--accent)}
+#doc img{max-width:100%;border-radius:10px}
+#doc mark{background:var(--mark);color:inherit;border-radius:4px;padding:0 3px}
+.anchor{
+  opacity:0;margin-left:9px;font-size:.65em;color:var(--fg-faint);text-decoration:none;
+  transition:opacity .18s var(--ease), color .18s;
+}
+#doc h2:hover .anchor,#doc h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent);text-decoration:none}
+
+/* ---------- toc ---------- */
+#toc{
+  border-left:1px solid var(--line);background:var(--bg-alt);
+  overflow-y:auto;overscroll-behavior:contain;padding:24px 14px 60px;
+}
+#toc .label{
+  font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fg-faint);padding:0 9px 12px;
+}
+#toc a{
+  position:relative;display:block;padding:5px 9px;border-radius:7px;font-size:12.1px;
+  line-height:1.4;color:var(--fg-faint);
+  transition:color .18s var(--ease), background .18s var(--ease), padding-left .22s var(--ease-out);
+}
+#toc a::before{
+  content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:999px;
+  background:var(--accent);transform:scaleY(0);transform-origin:50% 50%;
+  transition:transform .26s var(--ease-out);
+}
+#toc a:hover{color:var(--fg);background:var(--panel);text-decoration:none}
+#toc a.lvl3{padding-left:20px;font-size:11.5px}
+#toc a.current{color:var(--accent);background:var(--panel);padding-left:15px}
+#toc a.current.lvl3{padding-left:24px}
+#toc a.current::before{transform:scaleY(1)}
+
+/* ---------- misc ---------- */
+#welcome{max-width:660px;margin:64px auto;padding:0 24px;color:var(--fg-dim);
+  animation:docIn .45s var(--ease-out) both}
+#welcome h2{border:none;margin-top:0}
+#welcome h2::after{display:none}
+kbd{
+  font-family:inherit;font-size:11px;background:var(--panel-2);border:1px solid var(--line);
+  border-bottom-width:2px;border-radius:6px;padding:2px 7px;color:var(--fg-dim);
+}
+#toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translate(-50%,70px) scale(.96);opacity:0;
+  background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);
+  padding:10px 18px;border-radius:11px;font-size:13px;z-index:60;pointer-events:none;
+  transition:transform .38s var(--ease-out), opacity .28s var(--ease);
+}
+#toast.show{transform:translate(-50%,0) scale(1);opacity:1}
+#overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:35;
+  opacity:0;pointer-events:none;transition:opacity .3s var(--ease);
+  backdrop-filter:blur(2px);
+}
+body.nav-open #overlay{opacity:1;pointer-events:auto}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+
+.static-note{
+  padding:9px 15px;font-size:10.5px;line-height:1.5;color:var(--fg-faint);
+  border-bottom:1px solid var(--line-soft);
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <h1>Technical Prep Guide</h1>
+      <div class="sub" id="brand-sub">loading…</div>
+    </div>
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="Search documents…  ( / )" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="tree-bar">
+      <span id="tree-count"></span>
+      <button id="toggle-all" title="Collapse or expand all sections (c)">collapse all</button>
+    </div>
+
+    <div class="static-note">
+      Static copy generated 2026-08-18 · 36 documents ·
+      no server or connection required
+    </div>
+    <nav id="tree"></nav>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <button id="menu-btn" class="icon-btn" title="Menu">☰</button>
+      <div id="crumb">—</div>
+      <div class="spacer"></div>
+      <span class="pill" id="meta"></span>
+      <span class="pill" id="live-pill" title="Detects file changes on disk automatically"><i id="live-dot"></i> live</span>
+      <button class="icon-btn" id="theme-btn" title="Theme (t)">◐</button>
+      <div id="progress"></div>
+    </header>
+    <div id="scroller">
+      <article id="doc">
+        <div id="welcome">
+          <h2>📘 Your notes, in one place</h2>
+          <p>Pick a document on the left. Anything you add or change in this folder shows up on its own, with nothing to restart.</p>
+          <p style="margin-top:22px">
+            <kbd>/</kbd> search &nbsp;·&nbsp;
+            <kbd>j</kbd> <kbd>k</kbd> next / previous document &nbsp;·&nbsp;
+            <kbd>c</kbd> collapse sections &nbsp;·&nbsp;
+            <kbd>t</kbd> theme &nbsp;·&nbsp;
+            <kbd>g</kbd> back to top &nbsp;·&nbsp;
+            <kbd>Esc</kbd> clear search
+          </p>
+        </div>
+      </article>
+    </div>
+    <button id="totop" title="Back to top (g)" aria-label="Back to top">↑</button>
+  </main>
+
+  <aside id="toc"><div class="label">On this page</div><div id="toc-list"></div></aside>
+</div>
+<div id="overlay"></div>
+<div id="toast"></div>
+
+<script>window.__DOCS__ = null;</script>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const state = { files: [], current: null, mtimes: new Map(), signature: "" };
+const scroller = () => $("#scroller");
+
+/* Data layer: if the HTML ships the documents embedded (static export) it uses them;
+   otherwise it talks to the local server. The rest of the UI is identical in both modes. */
+const EMBED = window.__DOCS__ || null;
+async function apiTree() {
+  if (EMBED) return EMBED.tree;
+  return (await fetch("/api/tree")).json();
+}
+async function apiDoc(path) {
+  if (EMBED) {
+    const doc = EMBED.docs[path];
+    if (!doc) throw new Error("document not found");
+    return doc;
+  }
+  return (await fetch("/api/doc?path=" + encodeURIComponent(path))).json();
+}
+
+/* Cached heading offsets: avoids recomputing geometry on every scroll event. */
+let headOffsets = [];
+let tocLinks = [];
+let activeHead = null;
+let scrollQueued = false;
+
+/* ---------------- sidebar ---------------- */
+const CHEVRON = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5L5 6.5L8 3.5"/></svg>';
+
+function loadCollapsed() {
+  try { return new Set(JSON.parse(localStorage.getItem("ip-collapsed") || "[]")); }
+  catch { return new Set(); }
+}
+function saveCollapsed(set) {
+  try { localStorage.setItem("ip-collapsed", JSON.stringify([...set])); } catch {}
+}
+
+function setCollapsed(el, collapsed) {
+  const set = loadCollapsed();
+  el.classList.toggle("collapsed", collapsed);
+  collapsed ? set.add(el.dataset.key) : set.delete(el.dataset.key);
+  saveCollapsed(set);
+  syncToggleAll();
+}
+
+function syncToggleAll() {
+  const groups = [...document.querySelectorAll(".group")];
+  const allCollapsed = groups.length > 0 && groups.every(g => g.classList.contains("collapsed"));
+  $("#toggle-all").textContent = allCollapsed ? "expand all" : "collapse all";
+}
+
+function renderTree(tree) {
+  const nav = $("#tree");
+  const collapsed = loadCollapsed();
+  nav.innerHTML = "";
+  state.files = [];
+
+  for (const group of tree.groups) {
+    const box = document.createElement("div");
+    box.className = "group" + (collapsed.has(group.key) ? " collapsed" : "");
+    box.dataset.key = group.key;
+
+    const head = document.createElement("button");
+    head.className = "group-title";
+    head.innerHTML = `<span class="chev">${CHEVRON}</span>` +
+      `<span class="label"></span><span class="count">${group.files.length}</span>`;
+    head.querySelector(".label").textContent = group.label;
+    head.onclick = () => setCollapsed(box, !box.classList.contains("collapsed"));
+    box.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "group-body";
+    const inner = document.createElement("div");
+    inner.className = "group-inner";
+    body.appendChild(inner);
+
+    for (const file of group.files) {
+      state.files.push(file);
+      const btn = document.createElement("button");
+      btn.className = "doc";
+      btn.dataset.path = file.path;
+      btn.dataset.search = (file.title + " " + file.file + " " + group.label).toLowerCase();
+      btn.innerHTML = `<span class="t"></span><span class="m">${file.lines} lines · ${Math.max(1, Math.round(file.words / 220))} min</span>`;
+      btn.querySelector(".t").textContent = file.title;
+      btn.onclick = () => { open(file.path); if (innerWidth <= 820) document.body.classList.remove("nav-open"); };
+      inner.appendChild(btn);
+    }
+    box.appendChild(body);
+    nav.appendChild(box);
+  }
+
+  const none = document.createElement("div");
+  none.className = "empty";
+  none.id = "no-results";
+  none.style.display = "none";
+  none.textContent = "No documents match.";
+  nav.appendChild(none);
+
+  $("#brand-sub").textContent = `${tree.total} documents · ${tree.root}`;
+  $("#tree-count").textContent = `${tree.groups.length} sections · ${tree.total} docs`;
+  syncToggleAll();
+  markActive();
+  filter();
+}
+
+function markActive() {
+  document.querySelectorAll(".doc").forEach(el =>
+    el.classList.toggle("active", el.dataset.path === state.current));
+  // If the active document landed in a collapsed section, open it.
+  const active = document.querySelector(".doc.active");
+  if (active) {
+    const group = active.closest(".group");
+    if (group && group.classList.contains("collapsed")) setCollapsed(group, false);
+  }
+}
+
+function filter() {
+  const q = $("#search").value.trim().toLowerCase();
+  let visible = 0;
+  for (const group of document.querySelectorAll(".group")) {
+    let hits = 0;
+    for (const el of group.querySelectorAll(".doc")) {
+      const hit = !q || el.dataset.search.includes(q);
+      el.classList.toggle("hidden", !hit);
+      if (hit) hits++;
+    }
+    group.classList.toggle("no-match", q !== "" && hits === 0);
+    // While searching, sections with hits open by themselves without losing their saved state.
+    group.classList.toggle("force-open", q !== "" && hits > 0);
+    group.querySelector(".count").textContent = q ? `${hits}/${group.querySelectorAll(".doc").length}` : hits;
+    visible += hits;
+  }
+  const none = $("#no-results");
+  if (none) none.style.display = visible ? "none" : "block";
+}
+
+/* ---------------- document ---------------- */
+async function open(path, { keepScroll = false } = {}) {
+  const s = scroller();
+  const ratio = keepScroll ? s.scrollTop / Math.max(1, s.scrollHeight - s.clientHeight) : 0;
+  let data;
+  try {
+    data = await apiDoc(path);
+    if (data.error) throw new Error(data.error);
+  } catch (err) {
+    toast("Could not open: " + err.message);
+    return;
+  }
+  state.current = data.path;
+  state.mtimes.set(data.path, data.mtime);
+
+  const doc = $("#doc");
+  doc.classList.remove("enter");
+  doc.innerHTML = data.html;
+  document.title = data.title + " · Technical Prep Guide";
+  $("#crumb").innerHTML = `<b>${data.path.includes("/") ? data.path.split("/")[0] + " › " : ""}</b>${data.file}`;
+  $("#meta").textContent = `${data.lines} lines · ${data.minutes} min`;
+  history.replaceState(null, "", "#" + encodeURIComponent(data.path));
+
+  buildToc();
+  addAnchors();
+  wireInternalLinks();
+  typesetMath();
+  markActive();
+
+  // Instant jump (never animated) so opening a document does not "fly" down the page.
+  s.scrollTop = keepScroll ? ratio * (s.scrollHeight - s.clientHeight) : 0;
+  if (!keepScroll) { void doc.offsetWidth; doc.classList.add("enter"); }
+
+  measureHeadings();
+  onScroll(true);
+}
+
+function addAnchors() {
+  $("#doc").querySelectorAll("h2[id],h3[id]").forEach(h => {
+    const a = document.createElement("a");
+    a.className = "anchor"; a.href = "#" + h.id; a.textContent = "#";
+    a.onclick = e => { e.preventDefault(); scrollToHeading(h); };
+    h.appendChild(a);
+  });
+}
+
+/** Los links a otros .md navegan dentro del visor en vez de salir del navegador. */
+function wireInternalLinks() {
+  const dir = state.current.includes("/") ? state.current.replace(/\/[^/]*$/, "") : "";
+  for (const a of $("#doc").querySelectorAll('a[href$=".md"], a[href*=".md#"]')) {
+    const href = a.getAttribute("href") || "";
+    if (/^[a-z]+:/i.test(href)) continue;               // externo
+    const [file, frag] = href.split("#");
+    const parts = (dir ? dir + "/" + file : file).split("/");
+    const resolved = [];
+    for (const seg of parts) {
+      if (seg === "." || seg === "") continue;
+      if (seg === "..") resolved.pop(); else resolved.push(seg);
+    }
+    const target = resolved.join("/");
+    if (!state.files.some(f => f.path === target)) {
+      a.title = "Outside the viewer: " + href;
+      a.style.opacity = ".6";
+      continue;
+    }
+    a.title = "Open " + target;
+    a.onclick = e => {
+      e.preventDefault();
+      open(target).then(() => {
+        if (!frag) return;
+        const h = document.getElementById(frag) || $("#doc").querySelector(`[id="${CSS.escape(frag)}"]`);
+        if (h) scrollToHeading(h);
+      });
+    };
+  }
+}
+
+function buildToc() {
+  const list = $("#toc-list");
+  list.innerHTML = "";
+  const heads = [...$("#doc").querySelectorAll("h2[id],h3[id]")];
+  for (const h of heads) {
+    const a = document.createElement("a");
+    a.href = "#" + h.id;
+    a.dataset.target = h.id;
+    a.className = h.tagName === "H3" ? "lvl3" : "";
+    a.textContent = h.textContent.replace(/#$/, "").trim();
+    a.onclick = e => { e.preventDefault(); scrollToHeading(h); };
+    list.appendChild(a);
+  }
+  tocLinks = [...list.querySelectorAll("a")];
+  activeHead = null;
+  $("#toc").style.visibility = heads.length ? "visible" : "hidden";
+  $("#toc").scrollTop = 0;
+}
+
+/* ---------------- scroll ---------------- */
+function scrollToHeading(h) {
+  const s = scroller();
+  const top = h.offsetTop - (parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue("--topbar-h")) || 54) - 22;
+  s.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
+function measureHeadings() {
+  headOffsets = [...$("#doc").querySelectorAll("h2[id],h3[id]")]
+    .map(h => ({ id: h.id, top: h.offsetTop }));
+}
+
+/** One job per frame: progress bar, active TOC section and the back-to-top button. */
+function onScroll(force = false) {
+  if (scrollQueued && !force) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => {
+    scrollQueued = false;
+    const s = scroller();
+    const max = s.scrollHeight - s.clientHeight;
+    $("#progress").style.transform = `scaleX(${max > 4 ? Math.min(1, s.scrollTop / max) : 0})`;
+    $("#totop").classList.toggle("show", s.scrollTop > 700);
+
+    const probe = s.scrollTop + 110;
+    let current = null;
+    for (const h of headOffsets) { if (h.top <= probe) current = h.id; else break; }
+    if (current === activeHead) return;
+    activeHead = current;
+    for (const a of tocLinks) a.classList.toggle("current", a.dataset.target === current);
+    const on = tocLinks.find(a => a.classList.contains("current"));
+    if (on) {
+      const toc = $("#toc"), r = on.getBoundingClientRect(), b = toc.getBoundingClientRect();
+      if (r.top < b.top + 40 || r.bottom > b.bottom - 40) {
+        toc.scrollTo({ top: on.offsetTop - toc.clientHeight / 2, behavior: "smooth" });
+      }
+    }
+  });
+}
+
+/* ---------------- auto refresh ---------------- */
+async function poll(initial = false) {
+  let tree;
+  try {
+    tree = await apiTree();
+  } catch { return; }
+
+  const signature = tree.groups
+    .flatMap(g => g.files.map(f => `${f.path}:${f.mtime}:${f.lines}`)).join("|");
+  if (signature !== state.signature) {
+    const hadFiles = state.signature !== "";
+    state.signature = signature;
+    renderTree(tree);
+    if (hadFiles) { $("#live-dot").classList.remove("pulse"); void $("#live-dot").offsetWidth; $("#live-dot").classList.add("pulse"); }
+    if (state.current) {
+      const found = tree.groups.flatMap(g => g.files).find(f => f.path === state.current);
+      if (found && found.mtime !== state.mtimes.get(state.current)) {
+        await open(state.current, { keepScroll: true });
+        toast("Document updated");
+      } else if (!found) {
+        toast("The open document no longer exists");
+      }
+    }
+  }
+  if (initial) {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    const target = state.files.find(f => f.path === hash)
+      || state.files.find(f => f.path === tree.default) || null;
+    if (target) open(target.path);
+  }
+}
+
+/* ---------------- utilidades ---------------- */
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function typesetMath() {
+  if (window.renderMathInElement) {
+    try {
+      renderMathInElement($("#doc"), {
+        delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }],
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+        throwOnError: false
+      });
+    } catch { /* if KaTeX did not load, the formula stays as text */ }
+  }
+}
+
+/** Actually navigable documents: those passing the filter and not inside a collapsed section. */
+function visibleDocs() {
+  return [...document.querySelectorAll(".group")]
+    .filter(g => !g.classList.contains("no-match") &&
+                 (!g.classList.contains("collapsed") || g.classList.contains("force-open")))
+    .flatMap(g => [...g.querySelectorAll(".doc:not(.hidden)")]);
+}
+
+function step(delta) {
+  const visible = visibleDocs();
+  if (!visible.length) return;
+  const idx = visible.findIndex(el => el.dataset.path === state.current);
+  const next = visible[Math.min(visible.length - 1, Math.max(0, (idx < 0 ? 0 : idx + delta)))];
+  if (next) { open(next.dataset.path); next.scrollIntoView({ block: "nearest" }); }
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem("ip-theme", theme); } catch {}
+}
+
+/* ---------------- eventos ---------------- */
+$("#search").addEventListener("input", filter);
+$("#theme-btn").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+$("#menu-btn").onclick = () => document.body.classList.toggle("nav-open");
+$("#overlay").onclick = () => document.body.classList.remove("nav-open");
+$("#scroller").addEventListener("scroll", () => onScroll(), { passive: true });
+$("#totop").onclick = () => scroller().scrollTo({ top: 0, behavior: "smooth" });
+$("#toggle-all").onclick = () => {
+  const groups = [...document.querySelectorAll(".group")];
+  const collapse = !groups.every(g => g.classList.contains("collapsed"));
+  groups.forEach(g => setCollapsed(g, collapse));
+};
+
+let resizeTimer;
+addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { measureHeadings(); onScroll(true); }, 150);
+});
+
+addEventListener("keydown", e => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  if (e.ctrlKey || e.metaKey) return;
+  if (e.key === "/" && !typing) { e.preventDefault(); $("#search").focus(); $("#search").select(); }
+  else if (e.key === "Escape") { $("#search").value = ""; filter(); $("#search").blur(); document.body.classList.remove("nav-open"); }
+  else if (typing) return;
+  else if (e.key === "j") step(1);
+  else if (e.key === "k") step(-1);
+  else if (e.key === "t") $("#theme-btn").click();
+  else if (e.key === "c") $("#toggle-all").click();
+  else if (e.key === "g") scroller().scrollTo({ top: 0, behavior: "smooth" });
+  else if (e.key === "G") scroller().scrollTo({ top: scroller().scrollHeight, behavior: "smooth" });
+});
+
+try { setTheme(localStorage.getItem("ip-theme") || "dark"); } catch {}
+poll(true);
+if (EMBED) {
+  document.getElementById("live-pill").style.display = "none";  // sin servidor no hay recarga en vivo
+} else {
+  setInterval(poll, 2500);
+}
+</script>
+
+<!-- KaTeX is optional: with no network, formulas stay as plain text. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+        onload="typesetMath(); measureHeadings(); onScroll(true);"></script>
+</body>
+</html>

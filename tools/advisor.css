@@ -1,0 +1,65 @@
+
+/* ---------- arquitecto: necesidades del negocio -> stack recomendado ---------- */
+#adv-btn{
+  display:flex; align-items:center; width:auto; height:31px; padding:0 12px;
+  gap:7px; font-size:12px; letter-spacing:.02em; color:var(--fg-dim); white-space:nowrap;
+}
+#adv-btn:hover{ color:var(--accent); border-color:var(--accent) }
+
+#doc .adv{ animation:docIn .3s var(--ease-out) both }
+#doc .adv .lead{ color:var(--fg-dim); margin-top:4px }
+#doc .adv-form{
+  border:1px solid var(--line); border-radius:14px; background:var(--panel);
+  padding:16px 18px; margin:18px 0 10px;
+}
+#doc .adv-q{ margin-top:15px }
+#doc .adv-q:first-child{ margin-top:0 }
+#doc .adv-q .mx-label{ margin:0 0 7px }
+#doc .adv-q .hint{ text-transform:none; letter-spacing:0; font-weight:400; margin-left:6px }
+
+#doc .adv-head{ margin:30px 0 4px }
+#doc .adv-head .mx-tag{ margin-right:6px }
+#doc .adv-head h2{ margin:10px 0 0 }
+
+#doc .adv-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:10px; margin:16px 0 6px }
+#doc .adv-stat{ border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--panel-2) }
+#doc .adv-stat b{ display:block; font-size:19px; font-weight:700; color:var(--fg); letter-spacing:-.01em; font-variant-numeric:tabular-nums }
+#doc .adv-stat span{ font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--fg-faint) }
+
+#doc .adv-layers{ display:grid; gap:14px; margin-top:14px }
+#doc .adv-layer{ border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:14px 18px 12px }
+#doc .adv-lh{ display:flex; gap:12px; align-items:flex-start }
+#doc .adv-lh .n{
+  flex:none; width:26px; height:26px; border-radius:50%; display:grid; place-items:center;
+  font-size:12.5px; font-weight:700; color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 14%,transparent);
+}
+#doc .adv-lh h3{ margin:1px 0 0; font-size:15.5px; font-weight:650; border:none; padding:0 }
+#doc .adv-lh .ask{ margin:2px 0 0; font-size:12.5px; color:var(--fg-faint) }
+#doc .adv-rows{ margin:12px 0 0 }
+#doc .adv-row{
+  display:grid; grid-template-columns:170px minmax(0,1fr); gap:3px 16px;
+  padding:10px 0; border-top:1px solid var(--line-soft);
+}
+#doc .adv-row .w{ font-size:13px; font-weight:600; color:var(--fg) }
+#doc .adv-row .u{ font-size:13.5px; font-weight:600; color:var(--accent) }
+#doc .adv-row .y{ grid-column:2; font-size:13px; line-height:1.55; color:var(--fg-dim) }
+#doc .adv-rowhead{ padding:0 0 5px; border-top:none; font-size:10.5px; text-transform:uppercase;
+  letter-spacing:.09em; font-weight:650; color:var(--fg-faint) }
+#doc .adv-alts{ margin-top:4px; padding:9px 12px; border-radius:9px; background:var(--panel-2);
+  font-size:12.5px; color:var(--fg-dim) }
+#doc .adv-alts > b{ font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--fg-faint) }
+#doc .adv-alts ul{ margin:4px 0 0; padding-left:18px }
+#doc .adv-alts li{ margin:2px 0 }
+#doc .adv-alts li b{ color:var(--fg); font-weight:600 }
+#doc .adv-gloss{ display:grid; grid-template-columns:150px minmax(0,1fr); gap:6px 16px; font-size:13px }
+#doc .adv-gloss dt{ font-weight:600; color:var(--fg) }
+#doc .adv-gloss dd{ margin:0; color:var(--fg-dim) }
+#doc .adv-pitch{ border-left:2px solid var(--accent); padding-left:18px; margin:14px 0 }
+#doc .adv-pitch p{ margin:0 0 10px }
+#doc .adv-empty{ color:var(--fg-faint); font-size:13px }
+@media (max-width:640px){
+  #doc .adv-row, #doc .adv-gloss{ grid-template-columns:1fr }
+  #doc .adv-row .y{ grid-column:1 }
+  #doc .adv-rowhead{ display:none }
+}

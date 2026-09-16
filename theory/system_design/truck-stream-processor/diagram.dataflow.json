@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Truck Stream Processor — 10k Design",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1068,
+      620
+    ]
+  },
+  "stages": [
+    {
+      "label": "Ingest"
+    },
+    {
+      "label": "Stream"
+    },
+    {
+      "label": "Compute"
+    },
+    {
+      "label": "State"
+    },
+    {
+      "label": "Serve"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "API Gateway",
+      "sublabel": "10k trucks · HTTPS",
+      "stage": 0,
+      "row": 0,
+      "tag": "333 events/s",
+      "height": 64
+    },
+    {
+      "id": "kinesis",
+      "type": "messagebus",
+      "label": "Kinesis",
+      "sublabel": "2 shards · 24 h",
+      "stage": 1,
+      "row": 0,
+      "tag": "key: truck_id",
+      "height": 64
+    },
+    {
+      "id": "consumer",
+      "type": "backend",
+      "label": "Lambda consumer",
+      "sublabel": "batch per shard",
+      "stage": 2,
+      "row": 0,
+      "tag": "idempotent",
+      "height": 64
+    },
+    {
+      "id": "lake",
+      "type": "cloud",
+      "label": "Firehose → S3 raw",
+      "sublabel": "Parquet by dt",
+      "stage": 1,
+      "row": 3,
+      "tag": "cold path",
+      "height": 64
+    },
+    {
+      "id": "snowflake",
+      "type": "database",
+      "label": "Snowflake",
+      "sublabel": "history + analytics",
+      "stage": 2,
+      "row": 3,
+      "height": 64
+    },
+    {
+      "id": "dlq",
+      "type": "messagebus",
+      "label": "SQS on-failure",
+      "sublabel": "destination + alarm",
+      "stage": 3,
+      "row": 0,
+      "tag": "DLQ",
+      "height": 64
+    },
+    {
+      "id": "lastseen",
+      "type": "database",
+      "label": "DynamoDB",
+      "sublabel": "truck_id → last_seen",
+      "stage": 3,
+      "row": 1,
+      "tag": "hot state",
+      "height": 64
+    },
+    {
+      "id": "silence",
+      "type": "backend",
+      "label": "Silence Lambda",
+      "sublabel": "EventBridge · every 60 s",
+      "stage": 2,
+      "row": 2,
+      "tag": "detector",
+      "height": 64
+    },
+    {
+      "id": "alerts",
+      "type": "messagebus",
+      "label": "Alert topic",
+      "sublabel": "SNS / EventBridge",
+      "stage": 3,
+      "row": 2,
+      "height": 64
+    },
+    {
+      "id": "console",
+      "type": "frontend",
+      "label": "Operator console",
+      "sublabel": "snapshot + stream",
+      "stage": 4,
+      "row": 1,
+      "height": 64
+    }
+  ],
+  "flows": [
+    {
+      "from": "gateway",
+      "to": "kinesis",
+      "label": "PutRecords",
+      "classification": "key = truck_id",
+      "variant": "emphasis"
+    },
+    {
+      "from": "kinesis",
+      "to": "consumer",
+      "label": "batch per shard",
+      "variant": "emphasis"
+    },
+    {
+      "from": "consumer",
+      "to": "lastseen",
+      "label": "conditional put",
+      "classification": "event_time > last_seen",
+      "variant": "emphasis"
+    },
+    {
+      "from": "consumer",
+      "to": "dlq",
+      "label": "after N retries",
+      "variant": "security",
+      "route": "straight"
+    },
+    {
+      "from": "kinesis",
+      "to": "lake",
+      "label": "Firehose delivery",
+      "variant": "default",
+      "labelDy": 24
+    },
+    {
+      "from": "lake",
+      "to": "snowflake",
+      "label": "batch load",
+      "variant": "default"
+    },
+    {
+      "from": "silence",
+      "to": "lastseen",
+      "label": "scan stale trucks",
+      "classification": "last_seen < now − 10 min",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "left",
+      "via": [
+        [
+          530,
+          274
+        ]
+      ],
+      "labelSegment": 0
+    },
+    {
+      "from": "silence",
+      "to": "alerts",
+      "label": "new incident",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "from": "lastseen",
+      "to": "console",
+      "label": "Query API snapshot",
+      "variant": "default",
+      "route": "straight"
+    },
+    {
+      "from": "alerts",
+      "to": "console",
+      "label": "WebSocket push",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Hot vs cold",
+      "items": [
+        "One stream, two sinks",
+        "DynamoDB answers what is happening now",
+        "S3 + Snowflake answer what happened"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Why polling at 10k",
+      "items": [
+        "State stays durable in DynamoDB",
+        "Every component restarts freely",
+        "Move to Flink timers at 100k or sub-minute SLOs"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Failure modes",
+      "items": [
+        "Duplicates: conditional write on event_time",
+        "Poison batches: bounded retries → DLQ",
+        "Alert storms: one incident per silence"
+      ]
+    }
+  ]
+}
