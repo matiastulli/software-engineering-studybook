@@ -1,0 +1,79 @@
+/* ---------- diagram zoom ----------
+   Mermaid renders with useMaxWidth:true, so a dense flowchart is squeezed into the
+   reading measure and the labels stop being readable. Each rendered diagram gets an
+   expand affordance and opens in a pan/zoom overlay. */
+
+/* Diagrams use the full width of #doc, not its padding box: they are figures, not prose. */
+#doc pre.mermaid{ margin-inline:calc(-1 * var(--doc-pad, 0px)) }
+
+#doc pre.mermaid[data-processed]{ position:relative; cursor:zoom-in }
+#doc pre.mermaid[data-processed]:hover{ border-color:var(--scroll-hover) }
+
+.dz-open{
+  position:absolute; top:9px; right:9px; z-index:2;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px; border-radius:var(--r-sm,8px);
+  border:1px solid var(--line); background:var(--panel-2); color:var(--fg-dim);
+  font:500 11px/1 "Inter",system-ui,sans-serif; letter-spacing:.02em;
+  opacity:0; transform:translateY(-3px);
+  transition:opacity .18s var(--ease), transform .18s var(--ease),
+             color .18s var(--ease), border-color .18s var(--ease);
+}
+#doc pre.mermaid:hover .dz-open,
+.dz-open:focus-visible{ opacity:1; transform:none }
+.dz-open:hover{ color:var(--accent); border-color:var(--accent) }
+/* Touch has no hover: keep the affordance permanently visible there. */
+@media (hover:none){ .dz-open{ opacity:1; transform:none } }
+
+/* ---------- overlay ---------- */
+#dz{
+  position:fixed; inset:0; z-index:70; display:none;
+  background:color-mix(in srgb, var(--bg) 88%, #000);
+  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+}
+#dz.open{ display:flex; flex-direction:column; animation:dzIn .2s var(--ease-out) both }
+@keyframes dzIn{ from{opacity:0} to{opacity:1} }
+
+.dz-bar{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:11px 16px; border-bottom:1px solid var(--line);
+  background:color-mix(in srgb, var(--bg) 80%, transparent);
+}
+.dz-title{
+  font-size:12.5px; color:var(--fg-dim); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1;
+}
+.dz-bar .sp{ flex:1 }
+.dz-btn{
+  width:32px; height:32px; flex:none; border-radius:var(--r-sm,8px);
+  border:1px solid var(--line); background:var(--panel); color:var(--fg-dim);
+  display:grid; place-items:center; font-size:15px; line-height:1;
+  transition:background .16s var(--ease), color .16s var(--ease), border-color .16s var(--ease);
+}
+.dz-btn:hover{ background:var(--panel-2); color:var(--fg); border-color:var(--fg-faint) }
+.dz-btn:active{ transform:scale(.94) }
+.dz-pct{
+  min-width:56px; text-align:center; font-size:12px; color:var(--fg-faint);
+  font-variant-numeric:tabular-nums; user-select:none;
+}
+.dz-hint{ font-size:11px; color:var(--fg-faint); white-space:nowrap }
+@media (max-width:720px){ .dz-hint,.dz-title{ display:none } }
+
+.dz-stage{
+  flex:1; min-height:0; position:relative; overflow:hidden;
+  cursor:grab; touch-action:none;
+}
+.dz-stage.drag{ cursor:grabbing }
+.dz-canvas{
+  position:absolute; left:0; top:0; transform-origin:0 0;
+  will-change:transform;
+}
+.dz-canvas svg{
+  display:block; max-width:none !important; width:auto; height:auto;
+  /* Mermaid's dark theme paints no background of its own. */
+  background:var(--panel); border-radius:var(--r-md,12px); padding:18px;
+}
+@media (prefers-reduced-motion:reduce){
+  #dz.open{ animation:none }
+  .dz-canvas{ transition:none !important }
+}

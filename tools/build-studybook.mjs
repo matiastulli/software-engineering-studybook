@@ -20,6 +20,8 @@ const MIX_CSS = fs.readFileSync(path.join(ROOT, "tools", "mix.css"), "utf8");
 const MIX_JS  = fs.readFileSync(path.join(ROOT, "tools", "mix.js"), "utf8");
 const ADV_CSS = fs.readFileSync(path.join(ROOT, "tools", "advisor.css"), "utf8");
 const ADV_JS  = fs.readFileSync(path.join(ROOT, "tools", "advisor.js"), "utf8");
+const DZ_CSS  = fs.readFileSync(path.join(ROOT, "tools", "diagram-zoom.css"), "utf8");
+const DZ_JS   = fs.readFileSync(path.join(ROOT, "tools", "diagram-zoom.js"), "utf8");
 
 /* ---------- markdown -> html ---------- */
 const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -308,6 +310,7 @@ const mermaidCss = `
 #doc details pre{ margin-left:0; margin-right:0 }
 ${MIX_CSS}
 ${ADV_CSS}
+${DZ_CSS}
 </style>`;
 head = head.replace(/<\/style>/, () => mermaidCss);   // fn replacer: no $& expansion
 
@@ -318,6 +321,7 @@ const mermaidJs = `
 <script>window.__BANK__ = JSON.parse(${jsString(bank)});<\/script>
 <script>${MIX_JS}<\/script>
 <script>${ADV_JS}<\/script>
+<script>${DZ_JS}<\/script>
 <script>${MERMAID}<\/script>
 <script>
 function toggleAllAnswers(force){
@@ -358,6 +362,7 @@ async function renderMermaid(){
   // Awaited: each diagram becomes an SVG that is far taller than its source text, so the
   // cached heading offsets are stale until it settles — the TOC would track the wrong section.
   try { await mermaid.run({ nodes }); } catch(e) { console.warn("mermaid:", e); }
+  if (typeof window.__enhanceDiagrams === "function") window.__enhanceDiagrams();
   if (typeof measureHeadings === "function") { measureHeadings(); onScrollShell(true); }
 }
 // The bundle parses after the first document is already on screen; render it now.

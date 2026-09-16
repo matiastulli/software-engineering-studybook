@@ -261,9 +261,10 @@ body.nav-open #sidebar,#sidebar:not([hidden]){}
   scroll-padding-top:calc(var(--topbar-h) + 28px);
   contain:paint;
 }
-#doc{max-width:800px;margin:0 auto;padding:56px 48px 45vh}
-@media (max-width:1080px){#doc{padding:48px 40px 45vh}}
-@media (max-width:620px){#doc{padding:32px 20px 40vh}}
+/* --doc-pad is published so figures (diagrams) can bleed out to the full column width. */
+#doc{--doc-pad:48px;max-width:800px;margin:0 auto;padding:56px var(--doc-pad) 45vh}
+@media (max-width:1080px){#doc{--doc-pad:40px;padding:48px var(--doc-pad) 45vh}}
+@media (max-width:620px){#doc{--doc-pad:20px;padding:32px var(--doc-pad) 40vh}}
 #doc.enter{animation:docIn .38s var(--ease-out) both}
 @keyframes docIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
