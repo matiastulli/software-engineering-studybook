@@ -25,6 +25,10 @@ const ADV_JS  = fs.readFileSync(path.join(ROOT, "tools", "advisor.js"), "utf8");
 const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                   .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
+/* A JS string literal holding the JSON for `value`, safe to inline in a <script>.
+   The `</` escape stops any payload containing "</script>" from closing the tag early. */
+const jsString = value => JSON.stringify(JSON.stringify(value)).replace(/<\//g, "<\\/");
+
 const seen = new Map();
 function slug(text) {
   let s = text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -261,10 +265,13 @@ tail = tail.replace('document.title = data.title + " · Technical Prep Guide";',
                     'document.title = data.title + " · Theory";');
 
 // mermaid hooks
-// NB: the shell uses CRLF, so match the newline as \r?\n rather than a literal "\n".
-tail = tail.replace(/(  typesetMath\(\);)(\r?\n)/, (m, call, nl) => `${call}${nl}  renderMermaid();${nl}`);
+// NB: match the newline as \r?\n — the shell has been LF and CRLF at different times.
+// The calls are guarded: the bundle is loaded after this script, so on the very first
+// document renderMermaid may not exist yet and a bare call would reject the async open.
+const MERMAID_CALL = 'if (typeof renderMermaid === "function") renderMermaid();';
+tail = tail.replace(/(  typesetMath\(\);)(\r?\n)/, (m, call, nl) => `${call}${nl}  ${MERMAID_CALL}${nl}`);
 tail = tail.replace('  try { localStorage.setItem("ip-theme", theme); } catch {}',
-                    '  try { localStorage.setItem("ip-theme", theme); } catch {}\n  renderMermaid();');
+                    '  try { localStorage.setItem("ip-theme", theme); } catch {}\n  ' + MERMAID_CALL);
 
 const mermaidCss = `
 /* ---------- mermaid diagrams ---------- */
@@ -304,7 +311,13 @@ ${ADV_CSS}
 </style>`;
 head = head.replace(/<\/style>/, () => mermaidCss);   // fn replacer: no $& expansion
 
+// Script order matters. The question bank, mix and advisor come FIRST so their buttons and
+// shortcuts are live immediately; the 2.5 MB Mermaid bundle is parsed last, since nothing
+// needs it until a document containing a diagram is opened.
 const mermaidJs = `
+<script>window.__BANK__ = JSON.parse(${jsString(bank)});<\/script>
+<script>${MIX_JS}<\/script>
+<script>${ADV_JS}<\/script>
 <script>${MERMAID}<\/script>
 <script>
 function toggleAllAnswers(force){
@@ -321,7 +334,7 @@ document.addEventListener("keydown", e => {
   if (toggleAllAnswers()) e.preventDefault();
 });
 
-function renderMermaid(){
+async function renderMermaid(){
   if (typeof mermaid === "undefined") return;
   const nodes = [...document.querySelectorAll("#doc pre.mermaid")];
   if (!nodes.length) return;
@@ -330,11 +343,11 @@ function renderMermaid(){
     startOnLoad:false, securityLevel:"loose",
     theme: dark ? "dark" : "default",
     themeVariables: dark
-      ? { background:"#121a24", primaryColor:"#18212c", primaryTextColor:"#dde5f0",
-          primaryBorderColor:"#3b4a5e", lineColor:"#6ea8fe", secondaryColor:"#1b2733",
-          tertiaryColor:"#131b25", fontSize:"14px" }
-      : { background:"#ffffff", primaryColor:"#f4f7fa", primaryTextColor:"#18212c",
-          primaryBorderColor:"#c3cedb", lineColor:"#2563eb", secondaryColor:"#eef3f9",
+      ? { background:"#141924", primaryColor:"#1b2230", primaryTextColor:"#e4e9f2",
+          primaryBorderColor:"#3d4a5e", lineColor:"#7ea2ff", secondaryColor:"#1e2836",
+          tertiaryColor:"#151c27", fontSize:"14px" }
+      : { background:"#ffffff", primaryColor:"#f1f4f9", primaryTextColor:"#151a22",
+          primaryBorderColor:"#c2cddb", lineColor:"#3558d6", secondaryColor:"#eaf0f8",
           tertiaryColor:"#f8fafc", fontSize:"14px" },
     flowchart:{ curve:"basis", htmlLabels:true, useMaxWidth:true }
   });
@@ -342,15 +355,19 @@ function renderMermaid(){
     if (n.dataset.src) { n.innerHTML = n.dataset.src; n.removeAttribute("data-processed"); }
     else n.dataset.src = n.innerHTML;
   }
-  try { mermaid.run({ nodes }); } catch(e) { console.warn("mermaid:", e); }
+  // Awaited: each diagram becomes an SVG that is far taller than its source text, so the
+  // cached heading offsets are stale until it settles — the TOC would track the wrong section.
+  try { await mermaid.run({ nodes }); } catch(e) { console.warn("mermaid:", e); }
+  if (typeof measureHeadings === "function") { measureHeadings(); onScrollShell(true); }
 }
+// The bundle parses after the first document is already on screen; render it now.
+renderMermaid();
 <\/script>
-<script>window.__BANK__ = ${JSON.stringify(bank).replace(/<\//g, "<\\/")};<\/script>
-<script>${MIX_JS}<\/script>
-<script>${ADV_JS}<\/script>
 </body>`;
 tail = tail.replace("</body>", () => mermaidJs);       // fn replacer: no $& expansion
 
-const out = head + "window.__DOCS__ = " + JSON.stringify({ tree, docs }) + tail;
+// JSON.parse on a string literal beats a bare object literal for a payload this size:
+// the JSON grammar is simpler, so engines parse it several times faster.
+const out = head + "window.__DOCS__ = JSON.parse(" + jsString({ tree, docs }) + ")" + tail;
 fs.writeFileSync(OUT, out);
 console.error(`\nwrote ${path.relative(ROOT, OUT)}  (${(out.length/1048576).toFixed(2)} MB)`);

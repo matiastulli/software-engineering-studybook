@@ -1,7 +1,7 @@
 /* ============================================================
    Mix mode — builds a run of questions drawn across topics.
    Lee window.__BANK__ (generado por tools/build-studybook.mjs) y
-   se monta sobre el shell del visor: reusa #doc, toast() y open().
+   se monta sobre el shell del visor: reusa #doc, toast() y openDoc().
    ============================================================ */
 (function () {
   const BANK = window.__BANK__;
@@ -79,12 +79,23 @@
 
   const isOpen = () => modal && modal.classList.contains("open");
 
+  let lastFocus = null;
   function openModal() {
     if (!modal) buildModal();
     renderModal();
+    lastFocus = document.activeElement;
     modal.classList.add("open");
+    // inert on the app behind is what actually stops Tab escaping the dialog
+    const app = q$("#app"); if (app) app.setAttribute("inert", "");
+    const first = q$("#mx-close", modal); if (first) first.focus();
   }
-  function closeModal() { if (modal) modal.classList.remove("open"); }
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove("open");
+    const app = q$("#app"); if (app) app.removeAttribute("inert");
+    if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+    lastFocus = null;
+  }
 
   function renderModal() {
     const body = q$(".mx-body", modal);
@@ -244,17 +255,17 @@
     renderCard();
   }
 
-  // restore=false when the caller is about to open another document (avoids two stacked open() calls)
+  // restore=false when the caller is about to open another document (avoids two stacked openDoc() calls)
   function exitMix(restore = true) {
     if (!run.on) return;
     run.on = false; stopClock();
     document.body.classList.remove("mix-on");
     if (!restore) return;
-    if (state.current) open(state.current);
+    if (state.current) openDoc(state.current);
     else {
       q$("#doc").innerHTML = WELCOME;
       mountWelcomeCta();
-      q$("#crumb").textContent = "—"; q$("#meta").textContent = "";
+      q$("#crumb").textContent = ""; q$("#meta").textContent = "";
       if (typeof buildToc === "function") buildToc();
     }
   }
@@ -368,7 +379,7 @@
   function goSource(q) {
     if (!q) return;
     exitMix(false);
-    open(q.path).then(() => {
+    openDoc(q.path).then(() => {
       const h = document.getElementById(q.slug);
       if (h && typeof scrollToHeading === "function") scrollToHeading(h);
     });
@@ -423,8 +434,10 @@
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
     if (isOpen()) {
-      if (e.key === "Escape") { closeModal(); e.stopPropagation(); e.preventDefault(); }
-      else if (e.key === "Enter" && !typing) { start(); e.stopPropagation(); e.preventDefault(); }
+      // Swallow everything: otherwise t/j/k/g// still drive the hidden document underneath.
+      e.stopPropagation();
+      if (e.key === "Escape") { closeModal(); e.preventDefault(); }
+      else if (e.key === "Enter" && !typing) { start(); e.preventDefault(); }
       return;
     }
     if (!run.on) {
@@ -453,6 +466,7 @@
       <span style="margin-left:12px;font-size:12px;color:var(--fg-faint)">${QS.length} questions · ${BANK.topics.length} topics · press <kbd>m</kbd></span>`;
     wel.appendChild(p);
   }
+  window.__mixExit = exitMix;   // advisor needs exitMix(false) to avoid a stacked open
   document.addEventListener("click", e => { if (e.target.closest("#mx-welcome")) openModal(); });
   mountWelcomeCta();
 })();

@@ -2,7 +2,7 @@
    Advisor — you pick the business needs and it returns
    la arquitectura recomendada (no te pregunta: te responde).
    Se monta sobre el shell del visor igual que mix.js: reusa #doc,
-   buildToc(), renderMermaid() y open().
+   buildToc(), renderMermaid() y openDoc().
    ============================================================ */
 (function () {
   const q$ = (s, r = document) => r.querySelector(s);
@@ -490,8 +490,10 @@
   const isOn = () => !!q$("#doc .adv");
 
   function openAdvisor() {
-    const exitMix = q$('#doc .mx-run [data-act="exit"]');
-    if (exitMix) exitMix.click();
+    // exitMix(false): the restoring form re-opens the previous document asynchronously,
+    // and that continuation would overwrite the advisor painted below.
+    if (typeof window.__mixExit === "function") window.__mixExit(false);
+    else { const b = q$('#doc .mx-run [data-act="exit"]'); if (b) b.click(); }
     state.current = null;
     document.querySelectorAll(".doc.active").forEach(el => el.classList.remove("active"));
     document.title = "Architecture advisor · Theory";
@@ -507,7 +509,7 @@
           ${PRESETS.map((p, i) => `<button class="mx-chip" data-preset="${i}">${esc(p.name)}</button>`).join("")}
         </div>
         <div class="adv-form" id="adv-form"></div>
-        <div id="adv-out"></div>
+        <div id="adv-out" aria-live="polite"></div>
       </div>`;
     q$("#adv-presets").onclick = e => {
       const b = e.target.closest("[data-preset]");
@@ -525,7 +527,12 @@
         set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v);
         sel[q.id] = q.opts.map(o => o[0]).filter(v => set.has(v));
       } else sel[q.id] = b.dataset.v;
+      // #adv-form is rebuilt wholesale, so re-focus the chip the user just activated —
+      // otherwise focus falls back to <body> and every pick needs a full tab traversal.
+      const { q: qid, v } = b.dataset;
       update();
+      const again = q$(`#adv-form [data-q="${CSS.escape(qid)}"][data-v="${CSS.escape(v)}"]`);
+      if (again) again.focus();
     };
     update();
     q$("#scroller").scrollTop = 0;
@@ -542,7 +549,7 @@
         <div class="mx-chips">
           ${q.opts.map(([v, l]) => {
             const on = q.multi ? sel[q.id].includes(v) : sel[q.id] === v;
-            return `<button class="mx-chip${on ? " on" : ""}" data-q="${q.id}" data-v="${v}">${esc(l)}</button>`;
+            return `<button class="mx-chip${on ? " on" : ""}" aria-pressed="${on}" data-q="${q.id}" data-v="${v}">${esc(l)}</button>`;
           }).join("")}
         </div>
       </div>`).join("");
@@ -607,7 +614,7 @@
       <p style="font-size:12px;color:var(--fg-faint);margin-top:30px">Costs are order-of-magnitude infra estimates (no salaries), assuming ~1 KB per ping. Full comparison tables:
       <a href="#" id="adv-doc">cloud/architecture-comparison.md</a></p>`;
 
-    q$("#adv-doc").onclick = e => { e.preventDefault(); open("cloud/architecture-comparison.md"); };
+    q$("#adv-doc").onclick = e => { e.preventDefault(); openDoc("cloud/architecture-comparison.md"); };
     if (typeof renderMermaid === "function") renderMermaid();
     if (typeof buildToc === "function") { buildToc(); measureHeadings(); onScroll(true); }
   }
