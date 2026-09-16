@@ -46,7 +46,7 @@ Interview prep for senior data engineering, system design and Forward Deployed E
 | [react.md](frontend/react.md) | Hooks (the canonical table), effects and the fetch race, StrictMode, memoization, controlled forms, TypeScript discriminated unions |
 | [frontend-concepts.md](frontend/frontend-concepts.md) | Hook vs webhook, middleware in three frameworks, components/props/state, CSR vs SSR vs SSG, bundlers |
 | **AI** | |
-| [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) | Using Claude Code in a live interview (Tetris walkthrough), the agent loop, system prompt structure, structured outputs, evals and judge calibration, latency and cost |
+| [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) | Using Claude Code in a live interview (Tetris walkthrough, planning with a strong model and building with a cheaper one, PLAN.md), the agent loop, system prompt structure, structured outputs, evals and judge calibration, latency and cost |
 
 ---
 

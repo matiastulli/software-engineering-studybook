@@ -4,6 +4,7 @@
 
 - Interviews test LLM skills in two ways. You either **use** a coding agent such as Claude Code to build something while they watch (Part A), or you **design** an agent that runs inside a product (Part B). The same ideas work for both.
 - **Small, checkable steps beat one big prompt.** Ask for a plan first. Then build one slice at a time, and give each slice acceptance criteria you can check.
+- **Pay for strong thinking only where decisions get made.** Plan with a strong model, write the plan to a file (`PLAN.md`), then let a cheaper model do the work. Plan the whole project in outline but spell out only the next step in detail. When requirements change, update the plan before the code.
 - **Give the model a way to check its own work.** For a coding agent that means tests and a type checker. For a product agent it means tools that look up real data, plus validation in your own code.
 - **Don't take the model's word for it.** "Done, all tests pass" is a claim until you've read the diff and run the thing. A product agent works the same way: you only know it's good once a fixed set of test cases (a *golden set*) scores it, and an LLM judge only counts once you've checked it against human labels.
 - For product agents, the main levers on latency and cost are **fewer turns**, **prompt caching** and **sending easy steps to a smaller model**.
@@ -34,13 +35,15 @@ The trap is to treat this as a typing test for the model. Claude can write a who
 ```mermaid
 flowchart TD
     A[Clarify scope with the interviewer] --> B[Scaffold the project yourself and write CLAUDE.md]
-    B --> P[Plan mode: agree on the design before any code]
-    P --> C[Prompt ONE slice with acceptance criteria]
+    B --> P[Plan mode with a strong model: agree on the design]
+    P --> PL[Save the plan to PLAN.md]
+    PL --> C[Cheaper model: build ONE milestone with acceptance criteria]
     C --> D[Claude edits code and runs the tests]
     D --> E{You verify: read the diff, run the game}
-    E -->|works| F[Commit] --> C
+    E -->|works| F[Commit and tick the milestone in PLAN.md] --> C
     E -->|wrong| G[Specific feedback or a failing test] --> C
-    E -->|same bug twice| H[Stop, rewind, narrow the problem or write it yourself] --> C
+    E -->|same bug twice| H[Stop, rewind, switch to the strong model or write it yourself] --> C
+    E -->|requirements changed| R[Update PLAN.md first, re-plan if a decision breaks] --> C
 ```
 
 A rough plan for 60 minutes:
@@ -78,7 +81,7 @@ git init && git add -A && git commit -m "scaffold"
 claude
 ```
 
-Then create a short `CLAUDE.md` at the project root. Claude Code reads this file at the start of every session, so it's where constraints go that should hold for the whole hour. (The `/init` command generates one from an existing codebase, but in an empty project it's faster to write five lines yourself.)
+Then create a short `CLAUDE.md` at the project root. Claude Code reads this file at the start of every session, so it's where constraints go that should hold for the whole hour. (The `/init` command generates one from an existing codebase, but in an empty project it's faster to write a few lines yourself.)
 
 ```markdown
 # Tetris (interview exercise, 60 minutes)
@@ -92,6 +95,9 @@ A playable Tetris in the browser. Vanilla TypeScript and Canvas. No frameworks, 
 - src/main.ts: the game loop (requestAnimationFrame) and keyboard input.
 
 ## How to work
+- Read PLAN.md (once it exists) before starting. Work only on the current milestone.
+- When a milestone is done, tick it in PLAN.md. Don't change the Decisions section without asking me.
+- If the plan is wrong or missing something, stop and tell me. Don't redesign on your own.
 - Small steps. After each step, run `npx vitest run` and `npx tsc --noEmit` and show me the output.
 - Every rule in game.ts gets a unit test. Never change a test just to make it pass; tell me instead.
 - Don't add features I didn't ask for.
@@ -102,7 +108,7 @@ A playable Tetris in the browser. Vanilla TypeScript and Canvas. No frameworks, 
 
 ### A5. Step 2: ask for a plan, not code
 
-Switch to **plan mode** (press `Shift+Tab` until the footer says plan mode). In plan mode Claude reads and thinks but doesn't edit files. Your first prompt:
+Switch to **plan mode** (press `Shift+Tab` until the footer says plan mode). In plan mode Claude reads and thinks but doesn't edit files. If you've set `/model opusplan` (A6), this step runs on the stronger model. Your first prompt:
 
 ```text
 We're building Tetris in the browser in a 60-minute interview. Read CLAUDE.md for the constraints.
@@ -115,6 +121,8 @@ Don't write code yet. Give me:
 1. The GameState type and the list of functions in game.ts, with their signatures.
 2. An ordered list of 3–4 steps. Each step must end with something I can run or test.
 3. Any decisions you're unsure about, so I can make them.
+Use the PLAN.md structure: Goal, Decisions (and why), Milestones,
+Current milestone in detail, Out of scope, Change log.
 ```
 
 Read the plan out loud and **edit it**. This is where you show judgment. Typical things to push back on:
@@ -123,11 +131,99 @@ Read the plan out loud and **edit it**. This is where you show judgment. Typical
 - *It writes the falling piece into the board grid on every frame.* → "Keep the board (locked cells) and the active piece separate. It makes collision checks and rendering simpler."
 - *It suggests the full Super Rotation System for wall kicks.* → "Out of scope for the MVP. For now, if a rotation collides, just reject it."
 
-Once the plan looks right, leave plan mode and start building.
+Once the plan looks right, leave plan mode, save it to `PLAN.md` (see A7) and start building.
 
-### A6. Step 3: build one slice at a time
+### A6. Plan with a strong model, build with a cheaper one
 
-Each prompt names **one** slice, says where the code goes and says how you'll know it's done.
+Models aren't equally good at every part of the job, and they aren't equally priced either. As of September 2026, per million tokens (input / output):
+
+| Model | Price | Good at |
+|---|---|---|
+| Claude Fable 5.1 | $10 / $50 | The hardest, longest reasoning problems |
+| Claude Opus 5 | $5 / $25 | Design decisions, tricky bugs, spotting what a plan is missing |
+| Claude Sonnet 5 | $2 / $10 | Everyday coding against a clear spec |
+| Claude Haiku 4.5 | $1 / $5 | Small, mechanical tasks |
+
+**The idea.** The expensive part of a project is making decisions while things are still unclear: what's in scope, how the code is split up, which edge cases matter. Once those decisions are written down with acceptance criteria, most of what's left is well-defined work. So you have a strong model help you decide, and a cheaper model do the building.
+
+This saves real money for a simple reason: **most tokens go into execution, not planning.** A planning conversation is a few thousand tokens. Building means reading files, writing code, running tests, reading the output and trying again, and every turn re-sends the growing conversation. Paying Sonnet 5's price instead of Opus 5's for that part cuts the bill by about 2.5×. On a subscription plan, where you see usage limits instead of dollars, your limits last longer.
+
+**Two ways to do it:**
+
+1. **Inside Claude Code (recommended).** Run `/model opusplan`. Claude Code then uses Opus while you're in plan mode and switches to Sonnet automatically when it starts editing. You can also switch by hand with `/model opus` and `/model sonnet`, and adjust how hard the model thinks with `/effort`.
+2. **Plan in a chat app, build in Claude Code.** Talk the project through with a strong model in Claude.ai or Gemini (with extended thinking on), ask it for a written plan in the `PLAN.md` format below, paste that into the repo, then run Claude Code on Sonnet.
+
+Option 2 works well for a **new project** you want to think about at length, away from the terminal. It's weaker for an **existing codebase**, because the chat model can't see your code, so its plan will assume things that aren't true. In a 60-minute interview, option 1 is better: no copy-pasting between windows, and the planner can read the repo. (Also check first that the interviewer is fine with you using a second AI tool.)
+
+**When the split works, and when it doesn't:**
+
+- **The plan has to be really finished.** "Add scoring" is not a spec. "Add 100/300/500/800 points for 1/2/3/4 lines, in `game.ts`, with a test for each" is. A cheaper model fills gaps with guesses, and if you forget to update an instruction, it will follow the out-of-date one.
+- **Move up a model when you hit something the plan didn't cover.** If the executor fails at the same bug twice, or finds that the plan doesn't work (A9), switch to the strong model for that one problem, then switch back.
+- **Measure cost per finished task, not price per token.** If Sonnet needs three attempts where Opus needs one, Sonnet isn't cheaper. Before building a two-model setup, it's also worth trying the strong model at a lower `/effort`.
+- **Switch models at natural breaks.** The prompt cache belongs to one model, so switching in the middle of a long conversation means the next turn re-reads the whole context at full price. Switch between milestones, ideally right after a `/clear`.
+
+### A7. Keep the plan in a file (`PLAN.md`)
+
+A plan that only lives in the chat disappears the moment you `/clear`, start a new session or switch models. Write it to a file in the repo.
+
+**Markdown, not YAML.** A `progress.yml` sounds tidy, but Markdown is the better choice here:
+
+- People and models both read and edit Markdown easily. In YAML, one wrong indent or an unquoted `:` breaks the whole file.
+- A plan needs short explanations ("why we reject rotations instead of kicking"), and prose sits naturally in Markdown.
+- Only use YAML or JSON if a **script** needs to read the progress, for example a CI job that checks milestones.
+
+**Keep CLAUDE.md and PLAN.md separate.** They change at different speeds:
+
+| File | What it holds | How often it changes |
+|---|---|---|
+| `CLAUDE.md` | How to work: the architecture rules, commands, "don't add features" | Almost never |
+| `PLAN.md` | What we're building and where we are: decisions, milestones, changes | After every milestone |
+| Code and tests | What actually works | Constantly |
+
+The plan says what you *intend*. The tests say what's *true*. When they disagree, believe the tests and fix the plan. Commit `PLAN.md` along with the code so git history shows how the plan changed.
+
+**A PLAN.md for Tetris:**
+
+```markdown
+# PLAN: Tetris
+
+## Goal
+Playable browser Tetris in 60 minutes. MVP first, then one stretch feature.
+
+## Decisions (and why)
+- D1. Rules are pure functions in game.ts, so they can be tested without a browser.
+- D2. The board holds only locked cells; the active piece is separate. Collision checks stay simple.
+- D3. A rotation that collides is rejected. No wall kicks in the MVP.
+
+## Milestones
+- [x] M1. Rules and tests: movement, rotation, collision
+- [ ] M2. Playable: canvas rendering, game loop, keyboard  <- CURRENT
+- [ ] M3. Locking, line clears, score, game over
+- [ ] M4. Stretch: next-piece preview
+
+## Current milestone in detail (M2)
+- render.ts draws the board and active piece on a 300x600 canvas (30px cells)
+- main.ts: requestAnimationFrame loop, tick() every 800ms
+- Keys: Left/Right move, Up rotates, Down soft-drops, Space hard-drops
+- Done when: tests and tsc pass, and a human can play it in the browser
+
+## Out of scope
+Hold piece, ghost piece, sound, mobile controls.
+
+## Change log
+- M1 done. Tests: 9 passing.
+
+## Open questions
+- (none)
+```
+
+**Should you write the whole plan up front? Yes in outline, no in detail.** Write the goal, the decisions, the full list of milestones and what's out of scope at the start, because that's what the strong model is for. But only write out the **current** milestone step by step. Detailed instructions for milestone 4, written before milestone 1 exists, are guesses. They go stale as you learn things, and a cheaper model will follow them anyway. When a milestone is done, spend a minute (with the strong model, if the next one is tricky) filling in the next milestone's details.
+
+For a one-hour Tetris with three or four small milestones, detailing everything at once is fine. The rule matters much more on a project that lasts days, where the plan has more time to go stale.
+
+### A8. Step 3: build one slice at a time
+
+Each prompt names **one** slice, says where the code goes and says how you'll know it's done. With a `PLAN.md` in place, a prompt could be as short as *"Do the current milestone in PLAN.md."* In an interview it's still worth writing the criteria out in the prompt, as below, so the interviewer can see your thinking.
 
 **Slice 1: rules and tests, no UI yet.**
 
@@ -176,7 +272,7 @@ Test (b) is there on purpose. The classic Tetris bug is removing rows while loop
 
 **Stretch features, one per prompt.** With the time that's left, pick **one** item from the "later" list (the next-piece preview is quick and visible) and prompt it on its own. Never write "add a preview, levels and a ghost piece" in one prompt: if one of the three breaks, you can't tell which.
 
-### A7. When something breaks
+### A9. When something breaks
 
 Say you're playing and rotating the vertical I piece against the right wall makes part of it draw outside the board.
 
@@ -200,10 +296,45 @@ The strong version has four parts: **what happened, what should happen, how to r
 1. Press `Esc` to interrupt, and use `Esc Esc` (or `/rewind`) or `git checkout` to get back to the last good state.
 2. Find the problem yourself. Read `collides`, add a `console.log`, or check the failing test's numbers.
 3. Either give Claude the specific cause ("`collides` checks `x < 0` but never `x >= COLS`") or just write the two-line fix yourself.
+4. If you're running a cheaper model and the bug really is hard, switch to the strong one (`/model opus`) for this bug only, then switch back.
 
 Taking the keyboard back when it's faster isn't a failure. It shows you understand the code.
 
-### A8. Useful Claude Code controls
+**When the plan itself turns out to be wrong.** Sometimes the executor finds that the plan can't work as written. For example, the 7-bag randomizer needs to remember which pieces are left, and the plan's `GameState` has nowhere to keep that. The CLAUDE.md rule "if the plan is wrong, stop and tell me" exists for exactly this. A cheaper model left to improvise tends to quietly reshape the design. Treat it like a requirements change (A10).
+
+### A10. When requirements change halfway
+
+Interviewers often change the requirements on purpose, to see how you adapt ("nice, now make it two-player"). Real projects do the same thing without warning. **Sort the change before you react to it**, the same way B5 sorts agent failures before fixing them:
+
+| Kind of change | Example | What to do |
+|---|---|---|
+| **Fits the current design** | "Add a next-piece preview" | Add a milestone to `PLAN.md` and keep going on the cheaper model |
+| **Breaks a decision** | "Two players on one keyboard", "rotations should kick off walls like the official game" | Stop building. Go back to plan mode with the strong model, show it `PLAN.md` and the code, and update the decisions and the remaining milestones. Then continue |
+| **Cuts scope** | "We're short on time, skip levels" | Move it to "Out of scope" and log it. No re-planning needed |
+| **The plan was wrong** | The executor finds the plan doesn't work (see A9) | Small: edit the milestone. Touches a decision: re-plan as in row 2 |
+
+Three rules make this painless:
+
+1. **Update the plan first, then the code.** If you only mention the change in chat, the plan and the code drift apart. The next `/clear` or new session reloads the old plan, and the cheaper model faithfully rebuilds what you just changed.
+2. **Only rewrite the future.** Milestones that are done stay done. Don't regenerate the whole plan from scratch: you'd lose decisions that still hold, and the new plan can quietly contradict code you've already built.
+3. **Log the change and the reason** in one line ("Two-player requested; D1 still holds, M5–M6 added"). It helps whoever reads the plan next, including a fresh model session, and it's a good thing to say out loud in the interview.
+
+A re-planning prompt, in plan mode on the strong model:
+
+```text
+Requirements changed: the interviewer wants two players on one keyboard
+(player 1: WASD, player 2: arrow keys), side by side, first to top out loses.
+
+Read PLAN.md and the current code. Don't write code yet. Tell me:
+1. Which decisions still hold and which need to change, and why.
+2. The new list of remaining milestones. Keep completed ones as they are.
+3. Any questions I should ask the interviewer before we start.
+Once I approve, update PLAN.md: Decisions, Milestones, and one line in the Change log.
+```
+
+Notice what the earlier decisions buy you here. Because the rules are pure functions (D1), two players are just two `GameState` values, so most of the work lands in `main.ts` and `render.ts`, not in the tested rules. Good early decisions make late changes cheap, and pointing that out is a strong interview moment.
+
+### A11. Useful Claude Code controls
 
 These are current as of September 2026. Run `/help` if one has moved.
 
@@ -215,11 +346,14 @@ These are current as of September 2026. Run `/help` if one has moved.
 | `!npm run dev` | Run a shell command yourself without asking Claude to |
 | `/clear` | Start fresh between unrelated tasks. CLAUDE.md and the code on disk carry the important context |
 | `/compact` | Summarise a long conversation so the early instructions don't get crowded out |
+| `/model opusplan` | Opus while in plan mode, Sonnet while building (A6) |
+| `/model opus`, `/model sonnet` | Switch models by hand, e.g. move up for one hard bug |
+| `/effort` | How hard the model thinks (`low` to `max`). Lower effort is cheaper and faster |
 | Paste a screenshot | Show a visual bug ("the preview box overlaps the board") instead of describing it |
 
 On permissions: stay in normal mode for the first slice so you see every edit as it happens. Switching to auto-accept once the structure is settled is fine, but then check `git diff` before each commit.
 
-### A9. Prompt patterns: weak vs strong
+### A12. Prompt patterns: weak vs strong
 
 | Weak | Strong | Why it matters |
 |---|---|---|
@@ -229,8 +363,10 @@ On permissions: stay in normal mode for the first slice so you see every edit as
 | "Add tests." (after the code) | "Write failing tests for X, Y and Z first." | Tests written after the code tend to describe what it does, not what it should do |
 | Accepting whatever comes back | Read the tests, run the game, then commit | "All tests pass" means nothing if the tests are weak |
 | Keeping constraints only in chat | Put them in `CLAUDE.md` | Chat instructions fade in long sessions; the file is re-read |
+| Keeping the plan only in chat | Save it to `PLAN.md` and tick milestones as you go | The plan survives `/clear`, new sessions and model switches |
+| "Oh, also make it two-player" (mid-build) | Update `PLAN.md` first, re-plan if a decision breaks, then prompt | Otherwise the plan and the code disagree, and the next session follows the old plan |
 
-### A10. Failure modes in AI-assisted interviews
+### A13. Failure modes in AI-assisted interviews
 
 | Failure | What it looks like | How to avoid it |
 |---|---|---|
@@ -240,8 +376,10 @@ On permissions: stay in normal mode for the first slice so you see every edit as
 | **Tests that prove nothing** | Tests copy the implementation's logic, or Claude edits a test to make it pass | Read the assertions; forbid changing tests without asking |
 | **Going in circles** | A third "try again" on the same bug | Stop at two attempts: rewind, find the cause, give a precise hint or fix it yourself |
 | **No working state** | At minute 55 nothing is playable because everything is half-done | Commit after every green slice; playable by minute 40 is the goal |
+| **The stale plan** | Requirements changed in chat, but the cheaper model follows the old `PLAN.md` and rebuilds what you removed | Update the plan before the code; log each change |
+| **The underpowered executor** | The cheaper model loops on a problem the plan never covered, and saves nothing | Move up to the strong model for that one problem; judge cost per finished task |
 
-### A11. The bridge to Part B
+### A14. The bridge to Part B
 
 Everything above carries over to designing an agent for a product. Only the names change:
 
@@ -252,6 +390,7 @@ Everything above carries over to designing an agent for a product. Only the name
 | The tests decide, not Claude's "done!" | Your server validates tool calls instead of trusting the prompt |
 | Every bug becomes a test | Every production incident joins the golden set |
 | `CLAUDE.md` holds the constraints | The system prompt holds the rules and guardrails |
+| A strong model plans, a cheaper one builds | Easy, high-volume steps go to a smaller model (B7) |
 
 One distinction to keep clear: when an interviewer says *"build an agent for a customer"*, they mean Part B, an agent that runs in production. Configuring Claude Code (a `CLAUDE.md`, subagents) is about how *you* work, not what you ship.
 
@@ -471,7 +610,25 @@ Don't trust the summary. Read the tests: most likely none of them clears two row
 
 <details><summary><b>Q10.</b> Claude's second attempt at fixing the same bug has failed. What's your next move?</summary>
 
-Stop prompting "try again." Press `Esc`, rewind or `git checkout` back to the last good state, and find the cause yourself: read the relevant function, log the values, look at the failing test's numbers. Then either give Claude the precise cause and where it lives, or write the small fix yourself. Knowing when to take the keyboard back is part of what the interviewer is assessing.
+Stop prompting "try again." Press `Esc`, rewind or `git checkout` back to the last good state, and find the cause yourself: read the relevant function, log the values, look at the failing test's numbers. Then either give Claude the precise cause and where it lives, or write the small fix yourself. If you're on a cheaper model and the bug is genuinely hard, switch to the strong model for that one bug. Knowing when to take the keyboard back is part of what the interviewer is assessing.
+
+</details>
+
+<details><summary><b>Q11.</b> You plan with a strong model and build with a cheaper one. Why does that save money, what has to be true for it to work, and when do you switch back?</summary>
+
+It saves money because most tokens go into building (reading files, writing code, running tests, retrying), not into the short planning conversation. So the lower per-token price applies to the bulk of the work. It only works if the plan is really finished: decisions with their reasons, clear milestones, acceptance criteria and what's out of scope, all written to `PLAN.md`, because a cheaper model fills gaps with guesses. Switch back to the strong model when the executor hits something the plan didn't cover, or fails at the same problem twice. Judge by cost per finished task, not price per token, and switch at milestone boundaries, because the prompt cache doesn't carry over between models. In Claude Code, `/model opusplan` does the split automatically.
+
+</details>
+
+<details><summary><b>Q12.</b> Should you write the whole plan before any code? And why a PLAN.md instead of a progress.yml?</summary>
+
+Write the whole plan in **outline** (goal, decisions, all milestones, out of scope) but only the **current** milestone in detail. Detailed steps for later milestones are guesses that go stale, and a cheaper model will follow them anyway. Fill in each milestone's details when you reach it. Use Markdown because people and models both edit it reliably and it has room for the reasons behind decisions, while YAML breaks on one bad indent. Only use YAML or JSON if a script needs to read it. Keep `CLAUDE.md` for stable working rules and `PLAN.md` for state that changes.
+
+</details>
+
+<details><summary><b>Q13.</b> Halfway through, the interviewer asks for two players on one keyboard. You have a PLAN.md and a cheaper model building. What do you do?</summary>
+
+Sort the change first. It doesn't fit the current design (the game loop, input and rendering all assume one player), so it breaks decisions rather than just adding a milestone. Ask the interviewer any open questions (side by side? what ends the game?). Then go back to plan mode on the strong model with `PLAN.md` and the code, keep the completed milestones as they are, update the decisions and the remaining milestones, and log the change with its reason. Only then prompt the cheaper model again. It helps to point out that keeping the rules pure pays off here: two players are just two `GameState` values, so most of the change lands in `main.ts` and `render.ts`.
 
 </details>
 
