@@ -35,7 +35,7 @@ answer its self-check out loud.
 | `theory/system_design/` | The design method plus 6 worked cases — a truck telemetry stream processor, an in-memory load board, Postgres→warehouse CDC, an LLM document-ingestion pipeline, a freight billing warehouse, and a "you inherited a 400-model dbt project" refactor. Each sized, drawn and justified end to end. |
 | `theory/data-engineering/` | SQL, PySpark, Snowflake performance & cost, Databricks |
 | `theory/backend/` | Python, graph algorithms, Node/Express, REST APIs & webhooks, web performance & security |
-| `theory/cloud/` | The core toolkit (one default tool per job) and a 10 / 10k / 100k scale ladder |
+| `theory/cloud/` | The core toolkit on AWS (one default service per job), a 10 / 10k / 100k scale ladder, the AWS services in each case, and a glossary of data services |
 | `theory/software-design/` | Design patterns and architecture styles, kept to the set that actually gets asked |
 | `theory/ai/` | Prompting a coding agent in a live interview, and building LLM agents: guardrails, evals |
 | `theory/frontend/` | React and web vocabulary for engineers whose home turf isn't the frontend |

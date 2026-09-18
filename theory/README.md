@@ -29,7 +29,8 @@ Interview prep for senior data engineering, system design and Forward Deployed E
 | [snowflake-performance.md](data-engineering/snowflake-performance.md) | Micro-partition pruning, Query Profile, spilling, clustering, warehouse sizing, caching layers, cost attribution |
 | [databricks.md](data-engineering/databricks.md) | Lakehouse vs DBMS, compute types and DBU pricing, Delta Lake log/time travel/VACUUM, clustering, Unity Catalog, Delta Sharing |
 | **Architecture** | |
-| [cloud/architecture-comparison.md](cloud/architecture-comparison.md) | Core toolkit, scale ladder, four reference archetypes, AWS vs GCP vs Azure vs vendor-neutral |
+| [cloud/architecture-comparison.md](cloud/architecture-comparison.md) | Core toolkit on AWS, scale ladder, four reference archetypes, the AWS services in each of the six cases, AWS service per layer |
+| [cloud/data-services-glossary.md](cloud/data-services-glossary.md) | Short cards with links: DynamoDB, Firehose, Managed Flink, MSK and MSK Connect, IoT Core (MQTT), Redshift vs Snowflake, plus Fivetran, Airbyte and Confluent Cloud on AWS |
 | [99-reference/streaming-tools.md](system_design/99-reference/streaming-tools.md) | Transport vs processor, queue vs log, Lambda vs Flink, event time, watermarks, delivery semantics |
 | [99-reference/sql-vs-nosql.md](system_design/99-reference/sql-vs-nosql.md) | Database families, choosing one, dual-write anti-pattern, outbox, CDC, saga, consistency |
 | [99-reference/in-memory-databases.md](system_design/99-reference/in-memory-databases.md) | Redis data structures as design tools, caching patterns, invalidation, stampedes, eviction |

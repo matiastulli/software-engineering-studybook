@@ -13,8 +13,8 @@ Organised by the question they answer, not by AWS's own console categories. The 
 | **EventBridge** | Event bus with content routing | Route by event *content* with JSON rules, not just topic. Schema registry, third-party SaaS sources, archive & replay |
 | **EventBridge Scheduler** | Managed cron | Any scheduled invocation. Replaces CloudWatch Events rules and a self-hosted cron box |
 | **Kinesis Data Streams** | Partitioned log | Ordered, replayable stream with multiple independent consumers |
-| **Kinesis Data Firehose** | Managed delivery | Buffer a stream and land it in S3/Redshift/OpenSearch with no code. The lazy, correct way to archive events |
-| **MSK** | Managed Kafka | You need Kafka specifically — ecosystem, long retention, cross-cloud portability |
+| **Amazon Data Firehose** (formerly Kinesis Data Firehose) | Managed delivery | Buffer a stream and land it in S3/Redshift/OpenSearch with no code. The lazy, correct way to archive events |
+| **MSK** | Managed Kafka | You need Kafka specifically: many teams on one stream, compacted topics, retention past 365 days, Kafka Connect (via MSK Connect) |
 | **IoT Core** | MQTT broker + rules | Devices: per-device certs, device shadow, rules routing to Kinesis/Lambda/DynamoDB |
 
 > **SQS vs SNS vs EventBridge**, the one-liner: SQS is *one consumer pulls work*; SNS is *broadcast to known subscribers*; EventBridge is *route by content to whoever cares*. If asked to pick, EventBridge for integration events between services, SQS for work queues.

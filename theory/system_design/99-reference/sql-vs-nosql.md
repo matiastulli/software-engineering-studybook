@@ -222,10 +222,10 @@ Postgres is the source of truth for loads and bookings (ACID; booking must not d
 | --- | --- | --- | --- |
 | **Relational** | **Postgres**, MySQL, Aurora | Transactions, integrity, ad-hoc queries | Horizontal write scaling, deeply variable documents |
 | **Key-value** | **DynamoDB**, **Redis** | Predictable single-key access at any scale | Queries not aligned to the key, analytics |
-| **Document** | MongoDB, Firestore | Variable schema, whole-object reads/writes | Cross-document transactions, joins, reporting |
-| **Wide-column** | Cassandra, ScyllaDB, Bigtable | Huge write throughput, time-series, multi-region writes | Ad-hoc queries, joins |
+| **Document** | MongoDB, DocumentDB | Variable schema, whole-object reads/writes | Cross-document transactions, joins, reporting |
+| **Wide-column** | Cassandra, ScyllaDB, Keyspaces | Huge write throughput, time-series, multi-region writes | Ad-hoc queries, joins |
 | **Search** | OpenSearch, Elasticsearch | Full-text, faceting, arbitrary filter combos | Being the source of truth |
-| **Analytical (OLAP)** | **Snowflake**, BigQuery, ClickHouse, Redshift | Scans and aggregations over billions of rows | Single-row lookups, frequent small writes |
+| **Analytical (OLAP)** | **Snowflake**, Redshift, Athena | Scans and aggregations over billions of rows | Single-row lookups, frequent small writes |
 | **Time-series** | TimescaleDB, InfluxDB | Downsampling, retention, `time_bucket` | General-purpose workloads |
 | **Graph** | Neo4j, Neptune | Multi-hop traversal, fraud rings | Everything else |
 

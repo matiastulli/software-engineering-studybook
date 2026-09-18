@@ -186,7 +186,6 @@ When the hit rate would be low (dispatchers all filter differently, so most keys
 Licensing checked against redis.io, 2026-09. Since 8.0, Redis is OSI open source again via the AGPLv3 option. Valkey remains the no-questions default for managed services.
 
 - **AWS:** ElastiCache (Valkey, Redis OSS, Memcached). Valkey is priced ~20% below the other engines on node-based clusters and ~33% below on ElastiCache Serverless *(checked 2026-09)*. **MemoryDB** is the Redis/Valkey API with a durable multi-AZ transaction log, so it can be a primary database rather than a cache. **DAX** is a read-through/write-through cache for DynamoDB only.
-- **GCP:** Memorystore. **Azure:** Azure Managed Redis; Azure Cache for Redis retires on September 30, 2028 *(checked 2026-09)*.
 - **Others you may hear:** DragonflyDB (Redis-compatible, multi-threaded, vertical scaling first), Hazelcast (JVM in-memory data grid).
 - **When not to use RAM at all:** data that doesn't fit economically (RAM costs tens of times more per GB than SSD, approx.), complex queries and joins (Postgres/Snowflake), or strict durability without a replication window.
 

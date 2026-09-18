@@ -67,7 +67,7 @@ select * from {{ ref('stg_shipments') }}
 - **`microbatch`** (dbt 1.9+): when the fact is time-series and you want dbt to process one day per query, with per-batch retries and easy backfills.
 - **`append`:** only for immutable event logs where duplicates are impossible.
 
-**Trap:** on Snowflake, `insert_overwrite` replaces the **entire table**, not a partition. Unlike BigQuery or Spark, it does no partition overwrite.
+**Trap:** on Snowflake, `insert_overwrite` replaces the **entire table**, not a partition. Unlike Spark, it does no partition overwrite.
 </details>
 
 <details><summary><b>Q6.</b> What's the danger with incremental models nobody mentions?</summary>

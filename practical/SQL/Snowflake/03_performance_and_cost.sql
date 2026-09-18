@@ -53,7 +53,7 @@ ALTER TABLE silver.orders DROP CLUSTERING KEY;
 --   Subsequent queries on the same data hit local disk, not remote storage.
 --   Lost when warehouse suspends — this is why AUTO_SUSPEND matters.
 --
--- Layer 3: REMOTE STORAGE (S3/Azure/GCS)
+-- Layer 3: REMOTE STORAGE (S3)
 --   Always available, always costs a little I/O.
 
 -- Demo: run the same query twice, compare execution time

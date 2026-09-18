@@ -23,7 +23,7 @@ Worked case studies plus the reference material they draw on. Each case follows 
 | [In-memory databases](99-reference/in-memory-databases.md) | Redis/Valkey/Memcached/Dragonfly, Redis data structures as design tools, caching patterns, invalidation, stampede/penetration/avalanche, eviction |
 | [SQL vs NoSQL](99-reference/sql-vs-nosql.md) | Database families and how to choose, polyglot persistence, dual-write anti-pattern, outbox, CDC, saga, consistency models |
 | [AWS services map](99-reference/aws-services-map.md) | Services organised by the question they answer, plus five reference architectures worth memorising |
-| [Cloud architecture comparison](../cloud/architecture-comparison.md) | The core toolkit, the 10 / 10k / 100k trucks scale ladder, and AWS vs Kafka vs the rest |
+| [Cloud architecture comparison](../cloud/architecture-comparison.md) | The core toolkit on AWS, the 10 / 10k / 100k trucks scale ladder, and the AWS services in each case |
 | [Snowflake performance & cost](../data-engineering/snowflake-performance.md) | Micro-partitions & pruning, reading a Query Profile, spilling, clustering (and when not to), warehouse sizing, caching layers, ACCOUNT_USAGE cost attribution |
 
 ---

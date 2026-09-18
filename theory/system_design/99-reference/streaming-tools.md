@@ -3,14 +3,14 @@
 ## TL;DR
 
 - "A **queue** hands each message to one worker and forgets it. A **log** keeps events in order, and each consumer tracks its own offset, so many systems can read and replay the same data."
-- "The deciding question: does anyone else need to re-read this event? No → SQS. Yes → Kinesis on AWS, or Kafka when many teams, compaction or multi-cloud are involved."
+- "The deciding question: does anyone else need to re-read this event? No → SQS. Yes → Kinesis, or Kafka on MSK when many teams or compacted topics are involved."
 - "Transport and processing are separate layers. The log holds events. Lambda does stateless work; Flink does state, windows and timers."
 - "I build at-least-once delivery with idempotent consumers. Exactly-once is real only in narrow cases: Kafka-to-Kafka transactions, or Flink with a two-phase-commit sink."
 - "Partition key = ordering scope = throughput ceiling. Key by `truck_id`, never by `region`."
 
 ## Memorize only this
 
-From the [core toolkit](../../cloud/architecture-comparison.md): **SQS** (hand off work), **Kinesis** → **Kafka** (the event pipe), **Lambda** → **Flink** (react to events). Pub/Sub, Event Hubs, Redpanda, Pulsar, Kafka Streams and streaming SQL are "same idea, different name" and live in the [Reference](#reference-same-idea-different-name) section at the end.
+From the [core toolkit](../../cloud/architecture-comparison.md): **SQS** (hand off work), **Kinesis** → **Kafka on MSK** (the event pipe), **Lambda** → **Managed Flink** (react to events). Redpanda, Pulsar, Kafka Streams and streaming SQL are "same idea, different name" and live in the [Reference](#reference-same-idea-different-name) section at the end.
 
 ---
 
@@ -126,10 +126,10 @@ The full scale ladder (10 / 10k / 100k trucks) is in [architecture-comparison.md
 ### Decide
 
 - **Work queue, no replay** → **SQS**. If order per entity matters, use SQS FIFO with `MessageGroupId = truck_id`. It's the cheapest correct answer, and most systems need nothing more.
-- **Several independent consumers, or replay, on AWS** → **Kinesis**.
-- **Many teams, compaction, Kafka Connect, retention beyond 365 days, or multi-cloud** → **Kafka**.
+- **Several independent consumers, or replay** → **Kinesis Data Streams**.
+- **Many teams, compaction, Kafka Connect, retention beyond 365 days** → **Kafka on Amazon MSK**.
 - **Don't choose on "real-time".** All three deliver in milliseconds to seconds.
-- **What would make me switch Kinesis → Kafka:** consumer count outgrowing enhanced fan-out, a need for "latest value per key" topics, or a second cloud.
+- **What would make me switch Kinesis → Kafka:** consumer count outgrowing enhanced fan-out, or a need for "latest value per key" topics.
 
 ---
 
@@ -255,8 +255,6 @@ In closed systems: Kafka transactions commit output records and consumer offsets
 
 Only if asked. Each is a variation on the mechanism above.
 
-- **Google Pub/Sub**: managed pub/sub with no partitions to size, ordering keys, and replay via seek (topic retention up to 31 days). Google also offers *Managed Service for Apache Kafka*.
-- **Azure Event Hubs**: a partitioned log that speaks the Kafka protocol (Standard tier and up). Retention up to 7 days on Standard and 90 days on Premium/Dedicated. Log compaction on every tier except Basic.
 - **Redpanda**: the Kafka API reimplemented in C++, with no JVM. Same clients, fewer moving parts.
 - **Apache Pulsar**: a log with compute and storage split (BookKeeper) and built-in tiering to object storage.
 - **Kafka Streams**: a Java *library*, not a cluster, for Kafka-in → Kafka-out stateful processing (RocksDB + changelog topics).

@@ -42,7 +42,7 @@
 | --- | --- | --- |
 | **10 trucks** (0.3 events/s) | API Gateway + Lambda writes `last_seen` to Postgres; a cron query finds `last_seen < now() - 10 min` | A second consumer appears, or ping writes start hurting the app DB |
 | **10k trucks** (333/s): *this answer* | Kinesis (key `truck_id`) → Lambda → DynamoDB `last_seen`; Firehose → S3 → Snowflake; a scheduled Lambda scans for silence every 60 s | SLO under ~1 min, per-truck logic (debounce, geofence sequences), or the scan stops being cheap |
-| **100k trucks** (3,333/s, 3.3 MB/s → 4 shards min, 6–8 with headroom) | Kinesis → **Flink** with per-truck event-time timers → alert topic; DynamoDB/Redis becomes a view for the UI | Many teams read the stream, retention > 365 days, or multi-cloud → **Kafka** |
+| **100k trucks** (3,333/s, 3.3 MB/s → 4 shards min, 6–8 with headroom) | Kinesis → **Flink** with per-truck event-time timers → alert topic; DynamoDB/Redis becomes a view for the UI | Many teams read the stream, or retention > 365 days → **Kafka on MSK** |
 
 The core-toolkit ladder lists Flink at 10k for "live map & alerts". Use that row when you need per-truck state or sub-minute alerts. For a 10-minute silence rule, Lambda plus a scan is enough, so say why you're deferring Flink.
 
@@ -148,7 +148,7 @@ The processor must not serve HTTP. You couldn't scale reads separately, deploys 
 - **The write bill matters** (~$540/month at 10k, ~$5.4k at 100k on-demand) → put `last_seen` in a Redis sorted set (`ZADD` per ping). "Who is silent" then becomes one `ZRANGEBYSCORE` range query instead of a scan. Redis is rebuildable from the stream's 24 h replay ([in-memory-databases.md](../99-reference/in-memory-databases.md)).
 - **A scan takes longer than its interval** (far beyond 100k trucks) → Redis sorted set or Flink.
 - **Console needs rich filters** ("silent reefers in Texas") → a GSI per access pattern, or project state into OpenSearch.
-- **Many teams read telemetry, > 365 d retention, multi-cloud** → Kafka ([architecture-comparison.md](../../cloud/architecture-comparison.md)).
+- **Many teams read telemetry, > 365 d retention** → Kafka on MSK ([architecture-comparison.md](../../cloud/architecture-comparison.md)).
 - **Devices speak MQTT with per-device certificates** → AWS IoT Core in front of Kinesis instead of API Gateway.
 
 ---

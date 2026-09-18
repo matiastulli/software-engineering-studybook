@@ -26,8 +26,6 @@
       ["bi", "BI dashboards & reporting"], ["livemap", "Live operations map"],
       ["alerts", "Real-time alerts (late, offline, geofence)"], ["api", "Customer tracking API"],
       ["ml", "ML / AI (ETA, pricing, LLM agents)"]] },
-    { id: "cloud", label: "Cloud", opts: [
-      ["aws", "AWS"], ["gcp", "GCP"], ["azure", "Azure"], ["any", "Undecided / multi-cloud"]] },
     { id: "team", label: "Team", opts: [
       ["small", "1–2 generalist engineers"], ["sql", "Data team, SQL / dbt first"],
       ["platform", "Platform team (Spark / Kafka experience)"]] },
@@ -39,52 +37,28 @@
 
   const PRESETS = [
     { name: "Startup · 10 trucks", pick: { fleet: "s", latency: "minutes", sources: ["sql", "telemetry"], uses: ["bi"],
-      cloud: "aws", team: "small", budget: "tight", compliance: "none" } },
+      team: "small", budget: "tight", compliance: "none" } },
     { name: "Regional carrier · 500 trucks + marketing", pick: { fleet: "m", latency: "minutes",
-      sources: ["sql", "nosql", "marketing", "telemetry"], uses: ["bi", "livemap"], cloud: "aws", team: "sql",
+      sources: ["sql", "nosql", "marketing", "telemetry"], uses: ["bi", "livemap"], team: "sql",
       budget: "moderate", compliance: "pii" } },
     { name: "Marketing + SQL + NoSQL (no streaming)", pick: { fleet: "m", latency: "batch",
-      sources: ["sql", "nosql", "marketing"], uses: ["bi", "ml"], cloud: "gcp", team: "sql", budget: "moderate", compliance: "pii" } },
+      sources: ["sql", "nosql", "marketing"], uses: ["bi", "ml"], team: "sql", budget: "moderate", compliance: "pii" } },
     { name: "National fleet · 10k trucks", pick: { fleet: "l", latency: "seconds",
-      sources: ["sql", "telemetry", "docs", "webhooks"], uses: ["bi", "livemap", "alerts", "api"], cloud: "aws",
+      sources: ["sql", "telemetry", "docs", "webhooks"], uses: ["bi", "livemap", "alerts", "api"],
       team: "platform", budget: "moderate", compliance: "pii" } },
     { name: "Enterprise · 100k trucks", pick: { fleet: "xl", latency: "subsecond",
       sources: ["sql", "nosql", "marketing", "telemetry", "docs", "webhooks"], uses: ["bi", "livemap", "alerts", "api", "ml"],
-      cloud: "any", team: "platform", budget: "enterprise", compliance: "regulated" } }
+      team: "platform", budget: "enterprise", compliance: "regulated" } }
   ];
 
-  /* ---------------- catalogue by cloud ---------------- */
-  const SVC = {
-    aws: { name: "AWS", fn: "Lambda", queue: "SQS", log: "Kinesis Data Streams (on-demand)", kafka: "Amazon MSK",
-      flink: "Managed Service for Apache Flink", delivery: "Kinesis Firehose", obj: "S3", pg: "Aurora PostgreSQL",
-      kv: "DynamoDB", cache: "ElastiCache (Valkey)", cdc: "AWS DMS", sched: "EventBridge Scheduler",
-      airflow: "MWAA (managed Airflow)", workflow: "Step Functions", ocr: "Textract", llm: "Bedrock",
-      ws: "API Gateway WebSocket", api: "API Gateway (HTTP) + Lambda", iot: "IoT Core", mon: "CloudWatch",
-      secrets: "Secrets Manager + KMS", private: "VPC endpoints / PrivateLink", nosqlCdc: "DynamoDB Streams",
-      dwNative: "Redshift", notify: "SNS" },
-    gcp: { name: "GCP", fn: "Cloud Run functions", queue: "Pub/Sub", log: "Pub/Sub", kafka: "Managed Service for Apache Kafka",
-      flink: "Dataflow (Apache Beam)", delivery: "Pub/Sub BigQuery subscription", obj: "Cloud Storage",
-      pg: "Cloud SQL for PostgreSQL", kv: "Firestore / Bigtable", cache: "Memorystore", cdc: "Datastream",
-      sched: "Cloud Scheduler", airflow: "Cloud Composer (Airflow)", workflow: "Workflows", ocr: "Document AI",
-      llm: "Vertex AI", ws: "Cloud Run (WebSockets)", api: "Cloud Run + API Gateway", iot: "Pub/Sub ingest API",
-      mon: "Cloud Monitoring", secrets: "Secret Manager + Cloud KMS", private: "Private Service Connect / VPC-SC",
-      nosqlCdc: "Firestore triggers (Eventarc)", dwNative: "BigQuery", notify: "Pub/Sub push" },
-    azure: { name: "Azure", fn: "Azure Functions", queue: "Service Bus", log: "Event Hubs", kafka: "Event Hubs (Kafka API)",
-      flink: "Azure Stream Analytics", delivery: "Event Hubs Capture", obj: "ADLS Gen2",
-      pg: "Azure Database for PostgreSQL", kv: "Cosmos DB", cache: "Azure Cache for Redis", cdc: "Debezium on Event Hubs",
-      sched: "Functions timer trigger", airflow: "Azure Data Factory", workflow: "Durable Functions",
-      ocr: "Document Intelligence", llm: "Azure OpenAI", ws: "Web PubSub", api: "API Management + Functions",
-      iot: "IoT Hub", mon: "Azure Monitor", secrets: "Key Vault", private: "Private Link",
-      nosqlCdc: "Cosmos DB change feed", dwNative: "Microsoft Fabric", notify: "Event Grid" },
-    any: { name: "multi-cloud", fn: "Containers (Kubernetes / Cloud Run-style)", queue: "RabbitMQ or the cloud queue",
-      log: "Kafka (Confluent Cloud)", kafka: "Confluent Cloud", flink: "Confluent Cloud for Apache Flink",
-      delivery: "Kafka Connect sink", obj: "Object storage (S3 API)", pg: "Managed PostgreSQL", kv: "MongoDB Atlas / ScyllaDB",
-      cache: "Redis / Valkey", cdc: "Debezium", sched: "Kubernetes CronJob", airflow: "Astronomer (Airflow) or Dagster",
-      workflow: "Temporal", ocr: "OCR / vision model", llm: "Model API behind a gateway", ws: "WebSocket service",
-      api: "Containerized API + gateway", iot: "MQTT broker (EMQX / HiveMQ)", mon: "Datadog / Grafana",
-      secrets: "HashiCorp Vault", private: "PrivateLink per provider", nosqlCdc: "Debezium / Mongo change streams",
-      dwNative: "Snowflake", notify: "Kafka topic → notifier" }
-  };
+  /* ---------------- AWS service per job ---------------- */
+  const AWS = { name: "AWS", fn: "Lambda", queue: "SQS", log: "Kinesis Data Streams (on-demand)", kafka: "Amazon MSK",
+    flink: "Managed Service for Apache Flink", delivery: "Amazon Data Firehose", obj: "S3", pg: "Aurora PostgreSQL",
+    kv: "DynamoDB", cache: "ElastiCache (Valkey)", cdc: "AWS DMS", sched: "EventBridge Scheduler",
+    airflow: "MWAA (managed Airflow)", workflow: "Step Functions", ocr: "Textract", llm: "Bedrock",
+    ws: "API Gateway WebSocket", api: "API Gateway (HTTP) + Lambda", iot: "IoT Core", mon: "CloudWatch",
+    secrets: "Secrets Manager + KMS", private: "VPC endpoints / PrivateLink", nosqlCdc: "DynamoDB Streams",
+    dwNative: "Redshift", notify: "SNS" };
   const TRUCKS = { s: 10, m: 500, l: 10000, xl: 100000 };
   const short = x => x.split(/ \(| \/ | \+ | or /)[0];
   const fmt = n => n >= 100 ? Math.round(n).toLocaleString("en-US") : n >= 1 ? n.toFixed(1) : n.toFixed(2);
@@ -98,17 +72,14 @@
     ["functions", "Small pieces of code the cloud runs on demand, per request or message. No servers to manage."],
     ["Kinesis", "AWS's managed event pipe. Keeps events for days so several systems can read them independently."],
     ["Kafka", "Open-source event pipe. Very high throughput, many readers, keeps events as long as you want. More work to operate."],
-    ["Pub/Sub", "Google Cloud's managed messaging and event pipe."],
-    ["Event Hubs", "Azure's managed event pipe; speaks the Kafka protocol."],
     ["Flink", "Engine that processes events continuously and remembers state per key (e.g. last ping per truck), with timers."],
     ["Spark", "Distributed engine for big data (PySpark). Streaming mode processes events in small batches."],
     ["shards", "Slices of a Kinesis stream. Each takes ~1 MB/s; events for the same truck always go to the same shard, so they stay in order."],
     ["partitions", "Slices of a Kafka topic, read in parallel. Events with the same key stay in order."],
-    ["Snowflake", "Cloud data warehouse: stores data in columns for fast analytical SQL. Runs on AWS, GCP and Azure."],
-    ["BigQuery", "Google's serverless data warehouse; you pay per query."],
-    ["Redshift", "AWS's native data warehouse."],
+    ["Snowflake", "Data warehouse that stores data in columns for fast analytical SQL. Runs inside your AWS region and loads straight from S3."],
+    ["Redshift", "AWS's own data warehouse. Same job as Snowflake, one AWS bill, more tuning."],
     ["Databricks", "Platform for Spark, SQL and ML on top of files in cloud storage (a \"lakehouse\")."],
-    ["Iceberg", "Open table format for files on S3/GCS. Any engine (Snowflake, Spark, Athena) can read the same data."],
+    ["Iceberg", "Open table format for files on S3. Any engine (Snowflake, Spark, Athena) can read the same data."],
     ["dbt", "Tool to build warehouse tables from SQL files kept in Git, with tests and documentation."],
     ["marts", "The final, clean tables that dashboards and analysts use."],
     ["staging", "Intermediate tables where raw data is cleaned and renamed."],
@@ -127,12 +98,27 @@
     ["Metabase", "Open-source dashboard and BI tool."],
     ["Step Functions", "AWS service that runs multi-step workflows with retries."],
     ["Textract", "AWS service that reads text and tables from scanned documents."],
-    ["Bedrock", "AWS service to call LLMs (e.g. Claude) through one API."]
+    ["Bedrock", "AWS service to call LLMs (e.g. Claude) through one API."],
+    ["SQS", "AWS queue. A message is handed to one worker, retried if it fails, and deleted once done. No replay."],
+    ["SNS", "AWS topic that pushes one message to many subscribers: SQS queues, Lambdas, email, SMS."],
+    ["DynamoDB", "AWS key-value database. Millisecond reads by key at any scale; no joins, so you design tables around the lookups."],
+    ["Aurora", "AWS's managed Postgres/MySQL with storage replicated across 3 zones and up to 15 read replicas."],
+    ["Firehose", "Amazon Data Firehose: buffers a stream for seconds to minutes and writes files to S3, Snowflake or Redshift. No code, no replay."],
+    ["DMS", "AWS Database Migration Service. Reads the Postgres change log (CDC) and sends every change to Kinesis or S3."],
+    ["MSK", "Amazon Managed Streaming for Apache Kafka: Kafka run by AWS."],
+    ["MWAA", "Amazon Managed Workflows for Apache Airflow: Airflow without running the servers."],
+    ["IoT Core", "AWS's MQTT broker: devices connect with their own certificate and rules route messages into Kinesis or Lambda."],
+    ["ElastiCache", "AWS-managed Redis / Valkey."],
+    ["RDS Proxy", "Connection pool in front of Aurora/RDS so hundreds of Lambdas don't open hundreds of database connections."],
+    ["dead-letter queue", "Where a message goes after failing N times, so one bad message can't block or loop forever. You alarm on its size."],
+    ["Snowpipe", "Snowflake's continuous loader: a new file in S3 is loaded within about a minute, with no scheduler."],
+    ["CloudWatch", "AWS metrics, logs and alarms."],
+    ["IteratorAge", "Kinesis metric: how far behind a reader is. The single best health signal for a stream."]
   ];
 
   /* ---------------- recommendation engine ---------------- */
   function recommend(s) {
-    const C = SVC[s.cloud];
+    const C = AWS;
     const sources = s.sources.length ? s.sources : ["sql"];
     const src = k => sources.includes(k), use = k => s.uses.includes(k);
     const tel = src("telemetry");
@@ -150,8 +136,7 @@
 
     // --- transporte ---
     const needsLog = tel && (rt || big);
-    const kafka = needsLog && (s.cloud === "any" ||
-      (s.team === "platform" && (s.fleet === "xl" || (s.budget === "enterprise" && s.uses.length >= 4))));
+    const kafka = needsLog && s.team === "platform" && (s.fleet === "xl" || (s.budget === "enterprise" && s.uses.length >= 4));
     const busName = kafka ? C.kafka : C.log;
 
     // --- almacenes ---
@@ -173,17 +158,14 @@
     if (replicaOnly) dw = { kind: "replica", short: "Postgres read replica", pick: `${C.pg} read replica`,
       why: "A read-only copy of the production database. Analysts can run heavy queries without slowing down the app.",
       alts: [["A data warehouse", "With only one data source there's nothing to combine yet. It would be cost without value."]] };
-    else if (s.cloud === "gcp") dw = { kind: "bq", short: "BigQuery", pick: "BigQuery",
-      why: "Google's warehouse: no servers to manage, pay per query, and it connects natively to the other GCP services.",
-      alts: [["Snowflake", "Also great, but on GCP BigQuery is already wired into your accounts, permissions and billing."]] };
     else if (s.team === "platform" && (s.fleet === "xl" || use("ml"))) dw = { kind: "lakehouse", short: "Databricks lakehouse",
       pick: `Databricks (data kept as Delta / Iceberg files on ${short(C.obj)})`,
       why: "Your team knows Spark and needs ML. Data stays as open files on cheap storage, queried with SQL or Python.",
       alts: [["Snowflake", "Great for SQL reports, but ML and huge data volumes are cheaper to run next to the files."]] };
     else dw = { kind: "snowflake", short: "Snowflake", pick: "Snowflake",
-      why: "The easiest warehouse for SQL teams: each team gets its own compute, it handles NoSQL JSON, it can hide personal data per role, and it runs on any cloud.",
-      alts: [[C.dwNative, s.cloud === "aws" ? "Needs more tuning. Only pick it if the company requires AWS-only services."
-        : s.cloud === "azure" ? "A good fit for Microsoft-heavy BI shops, but less mature with dbt." : "Ties you to one cloud."]] };
+      why: "The easiest warehouse for SQL teams: each team gets its own compute, it handles NoSQL JSON, it can hide personal data per role, and it loads straight from S3 with Snowpipe.",
+      alts: [[C.dwNative, "Needs more tuning (distribution and sort keys, workload management). Pick it when the company wants everything AWS-native on one bill."],
+             ["Athena", "SQL straight over S3, pay per TB scanned. Good for occasional digging in the raw lake, not for a team's daily dashboards."]] };
 
     // --- procesamiento ---
     let proc = null;                                            // {kind, pick, rows, alts}
@@ -196,9 +178,9 @@
       ].filter(Boolean),
       alts: [["Flink or Spark streaming", "Built for second-level reactions that nobody here needs."]] };
     else if (tel && rt && (s.latency === "subsecond" || (stateful && big)))
-      proc = { kind: "flink", pick: kafka && s.cloud !== "any" ? `Flink on ${short(C.kafka)}` : C.flink,
+      proc = { kind: "flink", pick: C.flink,
         rows: [
-          { what: "Engine", use: kafka && s.cloud !== "any" ? `Flink on ${short(C.kafka)} (or ${C.flink})` : C.flink,
+          { what: "Engine", use: kafka ? `${C.flink} reading from ${short(C.kafka)}` : `${C.flink} reading from Kinesis`,
             why: "Remembers state per truck (like the time of its last ping) and fires a timer when a truck goes silent. After a crash it resumes without losing or double-counting events." },
           { what: "Load", use: `~${fmt(eps)} events per second`,
             why: "Too many to run one function per event. Flink processes the stream continuously on a small cluster." }
@@ -215,8 +197,12 @@
         rows: [
           { what: "Each ping", use: needsLog ? `A ${short(C.fn)} reads from the event pipe` : `A ${short(C.fn)} runs once per ping`,
             why: `Checks the data, drops duplicates and saves the truck's latest position. ~${fmt(eps)} events per second is easy for functions.` },
-          use("alerts") && { what: "Alerts", use: "A query that runs every minute",
-            why: "Finds trucks with no ping in the last 30 minutes. Simple, and no streaming engine needed." }
+          needsLog && { what: "Bad records", use: "Bisect the batch on error, retry a few times, then send it to an SQS dead-letter queue",
+            why: "A stream is ordered, so one bad ping retried forever blocks its whole shard. Alarm on the dead-letter queue's size." },
+          !big && hotWanted && { what: "Database connections", use: "RDS Proxy between Lambda and Aurora",
+            why: "Every concurrent Lambda opens its own connection; the proxy pools them so Postgres doesn't run out." },
+          use("alerts") && { what: "Alerts", use: `${C.sched} runs a Lambda every minute`,
+            why: "Finds trucks with no ping in the last 30 minutes. A missing ping triggers nothing, so something has to check on a clock." }
         ].filter(Boolean),
         alts: [["Flink", "A whole cluster for work a small function already handles."]] };
 
@@ -228,7 +214,7 @@
       ? { what: "Truck GPS", use: `Devices connect to ${C.iot}${/MQTT/.test(C.iot) ? "" : " over MQTT"} (or the tracking vendor's webhooks)`,
           why: "At 100k trucks you want a broker built for millions of small device messages." }
       : { what: "Truck GPS", use: `The tracking vendor (Samsara, Motive) sends pings to a small endpoint: ${C.api}`,
-          why: "You usually don't own the GPS devices. The vendor pushes the data to a URL you host." });
+          why: "You usually don't own the GPS devices. The vendor pushes the data to a URL you host. Every ping carries an event ID and the time it happened on the truck, so duplicates and late pings can be handled." });
     if (src("sql")) ing.push(replicaOnly
       ? { what: "Orders & billing (SQL)", use: "Nothing to copy. Reports read a replica of this same database",
           why: "With one database and a few reports, moving data elsewhere adds cost without benefit." }
@@ -246,8 +232,8 @@
       why: "Marketing APIs only allow a few calls per minute, return data page by page, and change past numbers later (late conversions). The connector handles all of that." });
     if (src("docs")) ing.push({ what: "Documents", use: `Upload to ${short(C.obj)} → ${short(C.workflow)} runs the steps → ${short(C.ocr)} reads the text → ${short(C.llm)} extracts the fields`,
       why: "Keep the original file, and send low-confidence results to a person to review." });
-    if (src("webhooks")) ing.push({ what: "Partner webhooks", use: `${short(C.api)} replies "OK" immediately, puts the message in ${short(C.queue)}, and a ${short(C.fn)} processes it`,
-      why: "Partners retry when you're slow, so answer fast and ignore duplicates (idempotency key)." });
+    if (src("webhooks")) ing.push({ what: "Partner webhooks", use: `${short(C.api)} checks the partner's signature, replies "OK" immediately and puts the message in ${short(C.queue)} (with a dead-letter queue); a ${short(C.fn)} processes it`,
+      why: "Partners retry when you're slow, so answer fast and ignore duplicates using the partner's event ID." });
     const ingAlts = [];
     if (src("marketing") || (src("sql") && !replicaOnly && !sqlCdc)) {
       ingAlts.push(["Writing your own Python scripts", "Every time an API changes or blocks you for calling too often, the pipeline breaks and you get paged."]);
@@ -262,17 +248,17 @@
     if (needsLog) layers.push({ layer: "Moving the events", ask: "Is there a pipe that carries events between systems?",
       rows: kafka ? [
         { what: "Event pipe", use: busName,
-          why: `~${fmt(eps)} events per second read by many systems. Kafka keeps every event, so any system can re-read it, and it works on any cloud.` },
+          why: `~${fmt(eps)} events per second read by many teams. Kafka keeps every event, so any system can re-read it, and adding one more reading team is cheap.` },
         { what: "Size", use: `${Math.max(6, shards * 3)}+ partitions`,
           why: "Partitions let readers work in parallel. Events for the same truck stay in order." }
       ] : [
         { what: "Event pipe", use: busName,
           why: `It keeps events for days, so several systems (${[proc && "processing", lake || !replicaOnly ? "history" : "", use("livemap") && "live map"].filter(Boolean).join(", ")}) can each read them at their own pace. Nothing to install or run.` },
-        { what: "Size", use: s.cloud === "gcp" ? "Scales automatically" : `${shards * 2} ${s.cloud === "aws" ? "shards" : "partitions"}`,
-          why: s.cloud === "gcp" ? `~${fmt(mbps)} MB/s of data, and Pub/Sub adjusts capacity itself.` : `~${fmt(mbps)} MB/s of data. Each slice takes about 1 MB/s; doubled to absorb spikes.` }
+        { what: "Size", use: `${shards * 2} shards, key = truck_id`,
+          why: `~${fmt(mbps)} MB/s of data. Each shard takes 1 MB/s or 1,000 records/s; doubled to absorb reconnect bursts. Keying by truck keeps each truck's pings in order.` }
       ],
       alts: kafka
-        ? [[short(SVC[s.cloud === "any" ? "aws" : s.cloud].log), "Has capacity limits per slice and gets costly when many systems read the same data."]]
+        ? [[short(C.log), "Read capacity is shared per shard, enhanced fan-out caps the number of readers, and there are no compacted topics."]]
         : [["Kafka", `Powerful but heavy to operate. At ${fmt(mbps)} MB/s it's extra work for no gain.`],
            [C.queue, "A queue deletes a message once it's read, so only one system could use each event."]] });
     else if (tel) layers.push({ layer: "Moving the events", ask: "Is there a pipe that carries events between systems?",
@@ -295,6 +281,8 @@
                      tel && !needsLog && !hot && "truck pings"].filter(Boolean);
     if (pgHolds.length) op.push({ what: "Business records", use: `${C.pg} (${pgHolds.join(", ")})`,
       why: "The single source of truth. Every other copy is filled from here, never by writing to two places at once." });
+    if (hot) op.push({ what: "Duplicate & late pings", use: "Write only if the ping is newer than the stored one",
+      why: "Deliveries are at-least-once and trucks resend after losing signal. Without the check a late ping moves the truck backwards on the map." });
     if (src("nosql")) op.push({ what: "App data", use: `${C.kv} (keep it)`,
       why: "Fine for the app, but bad for reports. Reports go to the analytics layer." });
     if (hot && big) op.push({ what: "Latest truck positions", use: hot,
@@ -309,7 +297,9 @@
       rows: [
         { what: "Reports & analysis", use: dw.pick, why: dw.why },
         lake && dw.kind !== "lakehouse" && { what: "Raw history", use: `Iceberg files on ${short(C.obj)}`,
-          why: `Cheap storage for every raw event${tel ? ` (~${fmt(gbDay)} GB/day)` : ""}. Any tool can read it, and you can rebuild anything from it.` }
+          why: `Cheap storage for every raw event${tel ? ` (~${fmt(gbDay)} GB/day)` : ""}. Any tool can read it, and you can rebuild anything from it.` },
+        !lake && needsLog && !replicaOnly && { what: "Raw history", use: `${short(C.delivery)} → Parquet files on ${short(C.obj)} → Snowpipe`,
+          why: `Stream retention is 24 h by default. The S3 copy${tel ? ` (~${fmt(gbDay)} GB/day)` : ""} lets you replay or backfill anything, cheaply.` }
       ].filter(Boolean),
       alts: dw.alts });
 
@@ -336,18 +326,18 @@
       ? { rows: [{ what: "Jobs", use: `${connector}'s own schedule, then dbt ${dbtKind === "Cloud" ? "Cloud jobs" : "Core run from CI"}`,
             why: "Only two steps: copy the data, then build the tables. Their built-in schedulers are enough." }],
           alts: [["Airflow", "Add it once 3 or more tools depend on each other."]] }
-      : { rows: [{ what: "Jobs", use: C.airflow + (s.cloud !== "any" ? " or Dagster" : ""),
+      : { rows: [{ what: "Jobs", use: C.airflow,
             why: "Many sources and steps need one place that runs them in order, retries failures, re-runs past days, and alerts when something is late." }],
           alts: [["Cron or each tool's own scheduler", "No view of what depends on what, and failures happen silently."]] };
     if (src("docs")) orch.rows.push({ what: "Each document", use: C.workflow, why: "Runs the steps for each file (read → extract → review → save), with retries." });
     layers.push({ layer: "Scheduling", ask: "What runs the jobs in the right order?", ...orch });
 
     // 8. serving
-    const bi = s.budget === "tight" ? "Metabase" : s.cloud === "gcp" ? "Looker" : s.cloud === "azure" ? "Power BI" : s.budget === "enterprise" ? "Tableau or Sigma" : "Metabase or Sigma";
+    const bi = s.budget === "tight" ? "Metabase" : s.budget === "enterprise" ? "Tableau or Sigma" : "Metabase or Sigma";
     const serve = [
-      use("bi") && { what: "Dashboards", use: bi, why: s.budget === "tight" ? "Free and open source." : `Fits the ${C.name} setup and the budget.` },
+      use("bi") && { what: "Dashboards", use: bi, why: s.budget === "tight" ? "Free and open source." : "Fits the budget and reads straight from the warehouse." },
       use("livemap") && { what: "Live map", use: `Load a snapshot, then receive updates through ${short(C.ws)}`,
-        why: "The server pushes only what changed, instead of every screen asking again every few seconds." },
+        why: "A database can't push to browsers. The Lambda that saves a new position also posts it to the open connections (their IDs kept in a small DynamoDB table). Screens re-load the snapshot after reconnecting." },
       use("api") && { what: "Customer tracking", use: `${short(C.api)} with a ${short(C.cache)} cache`,
         why: "Customer traffic never touches the production database." },
       use("alerts") && { what: "Alerts", use: `${proc && ["flink", "spark"].includes(proc.kind) ? short(proc.pick) : "Scheduled query"} → ${C.notify}`,
@@ -358,10 +348,10 @@
     if (serve.length) layers.push({ layer: "Who uses it", ask: "How does each consumer get the data?", rows: serve, alts: [] });
 
     // 9. seguridad
-    const masking = dw.kind === "bq" ? "Policy tags" : dw.kind === "lakehouse" ? "Unity Catalog column masks" : dw.kind === "snowflake" ? "Masking policies" : "Column-level permissions";
+    const masking = dw.kind === "lakehouse" ? "Unity Catalog column masks" : dw.kind === "snowflake" ? "Masking policies" : "Column-level permissions";
     const sec = [
       { what: "Passwords & keys", use: C.secrets, why: "Never stored in code, and rotated automatically." },
-      { what: "Monitoring", use: [C.mon, needsLog && "alarm when readers fall behind", !replicaOnly && "dbt freshness tests"].filter(Boolean).join(" + "),
+      { what: "Monitoring", use: [C.mon, needsLog && "alarms on Kinesis IteratorAge and dead-letter queue size", !replicaOnly && "dbt freshness tests"].filter(Boolean).join(" + "),
         why: "You hear about a stuck pipeline before the business does." },
       { what: "Infrastructure", use: "Terraform", why: "Everything is defined as code, so it's reviewed and reproducible." },
       s.compliance !== "none" && { what: "Personal data", use: `${masking} + a deletion process`,
@@ -384,11 +374,11 @@
 
     const triggers = [];
     if (tel && !needsLog) triggers.push(`~1,000+ trucks, or a second system needing live data → add ${short(C.log)} as an event pipe.`);
-    if (needsLog && !kafka) triggers.push(`Many teams reading the same events, or leaving ${C.name} → move to Kafka (${s.cloud === "any" ? "Confluent" : C.kafka}).`);
+    if (needsLog && !kafka) triggers.push(`Many teams reading the same events, compacted "latest value" topics, or retention past 365 days → move to Kafka on ${C.kafka}.`);
     if (proc && proc.kind === "fn") triggers.push(`Alerts that must remember past events at large scale → ${C.flink}.`);
     if (proc && proc.kind === "micro") triggers.push("The business needs second-level updates (live map, alerts) → add a streaming engine.");
-    if (replicaOnly) triggers.push("A second data source, or analysts slowing down the replica → a warehouse (Snowflake / BigQuery) + dbt.");
-    if (simpleOrch) triggers.push("3 or more tools depending on each other → Airflow or Dagster.");
+    if (replicaOnly) triggers.push("A second data source, or analysts slowing down the replica → a warehouse (Snowflake or Redshift) + dbt.");
+    if (simpleOrch) triggers.push("3 or more tools depending on each other → Airflow on MWAA.");
     if (!lake && tel && !replicaOnly) triggers.push(`Raw truck history gets expensive in the warehouse → keep it as Iceberg files on ${short(C.obj)}.`);
     if (s.compliance === "none") triggers.push("The first big customer asks for SOC 2 → add data masking, audit logs, private networking.");
 
@@ -405,7 +395,7 @@
     const pitch = [
       `With ${TRUCKS[s.fleet].toLocaleString("en-US")} trucks and ${fresh} freshness${tel ? `, telemetry is about ${fmt(eps)} events per second (${fmt(gbDay)} GB/day)` : ", there's no high-volume stream"}, so ${!needsLog ? "a streaming platform would be over-engineering" : kafka ? "a shared Kafka backbone pays for itself" : `a managed event pipe, ${short(C.log)}, is the right size`}.`,
       `${src("marketing") || multiSource ? `The harder problem is combining ${sources.filter(k => ["sql", "nosql", "marketing"].includes(k)).map(k => ({ sql: "SQL", nosql: "NoSQL", marketing: "marketing" }[k])).join(", ")} data, so I'd use managed connectors${sqlCdc ? " plus CDC" : ""} into ${dw.short}${replicaOnly ? "" : " and build one customer view in dbt"}.` : `Data lands in ${dw.short}.`}${proc ? ` ${short(proc.pick)} handles the ${proc.kind === "micro" ? "batched delivery" : "live path"}.` : ""}`,
-      `The trade-off I'm choosing: ${kafka ? "more operational work in exchange for throughput, replay and portability" : lean ? "managed services over control. Less to operate for a small team, at the price of some lock-in" : "managed cloud services and low ops over portability, with data kept in open formats"}.`,
+      `The trade-off I'm choosing: ${kafka ? "more operational work in exchange for replay, compaction and many independent consumers" : lean ? "managed services over control. Less to operate for a small team, at the price of some lock-in" : "managed AWS services and low ops over control, with raw data kept as open files on S3"}.`,
       triggers.length ? `I'd revisit it when: ${triggers[0].charAt(0).toLowerCase() + triggers[0].slice(1)}` : ""
     ].filter(Boolean);
 
@@ -446,7 +436,7 @@
           if (use("alerts") && r.proc.kind !== "fn") E(P, N("AL", "Alerts"));
         }
         if (r.lake) { E(BUS(), N("DL", short(C.delivery))); E("DL", N("RAW", `Iceberg on ${short(C.obj)}`, true)); E("RAW", DW()); }
-        else if (!r.replicaOnly) { E(BUS(), N("DL", short(C.delivery))); E("DL", DW()); }
+        else if (!r.replicaOnly) { E(BUS(), N("DL", short(C.delivery))); E("DL", N("RAW", `S3 raw<br/>Parquet`, true)); E("RAW", DW(), "Snowpipe"); }
       } else {
         const F = N("FN", short(C.fn));
         E(I, F); E(F, r.hot ? HOT() : PG());
@@ -466,7 +456,7 @@
     if (src("marketing")) E(N("MK", "Marketing SaaS<br/>CRM · Ads"), CON());
     if (r.needsLog && r.sqlCdc && !nodes.has("DL")) E(BUS(), DW());
     if (src("docs")) { E(N("DOC", "Documents<br/>BOL · POD"), N("WF", short(C.workflow))); E("WF", N("OCR", `${short(C.ocr)} + ${short(C.llm)}`)); E("OCR", PG()); }
-    if (src("webhooks")) { E(N("WH", "Partner webhooks"), N("Q", short(C.queue))); E("Q", N("WFN", short(C.fn))); E("WFN", PG()); }
+    if (src("webhooks")) { E(N("WH", "Partner webhooks"), N("WGW", "API Gateway<br/>verify signature")); E("WGW", N("Q", short(C.queue))); E("Q", N("WFN", short(C.fn))); E("WFN", PG()); }
     if (nodes.has("PG") && !r.replicaOnly && !src("sql")) E("PG", CON());
     if (nodes.has("CON")) E("CON", DW());
 
@@ -482,6 +472,7 @@
   /* ---------------- UI ---------------- */
   const valid = (q, v) => q.opts.some(o => o[0] === v);
   let sel = Object.assign({}, PRESETS[1].pick, read());
+  delete sel.cloud;                                         // left over from when the advisor offered other clouds
   for (const q of QUESTIONS) {
     if (q.multi) sel[q.id] = (Array.isArray(sel[q.id]) ? sel[q.id] : []).filter(v => valid(q, v));
     else if (!valid(q, sel[q.id])) sel[q.id] = PRESETS[1].pick[q.id];

@@ -151,7 +151,7 @@ SELECT * FROM (
 WHERE rn = 1;
 ```
 
-**Snowflake aside: `QUALIFY`.** It filters on a window result without a subquery. Databricks SQL and BigQuery support it too.
+**Snowflake aside: `QUALIFY`.** It filters on a window result without a subquery. Databricks SQL supports it too.
 ```sql
 SELECT * FROM raw.loads
 QUALIFY ROW_NUMBER() OVER (PARTITION BY load_id ORDER BY updated_at DESC, _loaded_at DESC) = 1;
