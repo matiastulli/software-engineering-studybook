@@ -295,30 +295,71 @@ The reference API uses a single shared API key, which is fine for one trusted in
 
 ### The problem
 
-Your `dashboard` runs on `http://localhost:5173` and calls `legacy-wrapper` on `http://localhost:4000`. Your Node smoke test against the API passed. But in the browser, the dashboard shows "could not reach the server", and the network tab shows no HTTP status at all.
+Your `dashboard` runs on `http://localhost:5173` and calls your API on `http://localhost:4000`. You tested the API with curl and a Node script, and it works. But in the browser, the dashboard shows "could not reach the server", and the network tab shows no HTTP status at all.
 
-### The mechanism
+Nothing is wrong with your API. **The browser is blocking the call on purpose.** To see why, you first need to know what the browser is protecting against.
 
-An **origin** is the combination of scheme, host and port: `http://localhost:5173` and `http://localhost:4000` are different origins because the ports differ. Browsers enforce the **same-origin policy**: JavaScript running on one origin isn't allowed to *read* a response from another origin unless that server explicitly opts in with `Access-Control-Allow-*` response headers. That opt-in mechanism is **CORS** (Cross-Origin Resource Sharing).
+### Why the browser blocks it: protecting the user
 
-The key thing to understand is that **the browser does the blocking, not the server**. `curl`, Node scripts and server-to-server calls don't enforce the same-origin policy at all, which is why the smoke test passed.
+Imagine you're logged in to your bank at `bank.com`. Your browser holds the bank's login cookie, and it attaches that cookie automatically to every request that goes to `bank.com`.
 
-For most real API calls, the browser also asks permission *before* sending the request. This is the **preflight**: an automatic `OPTIONS` request saying "I'm about to send a POST from this origin with these headers. Is that allowed?" Only if the server's answer says yes does the browser send the real request.
+Now you open another tab on `evil.com`. The JavaScript on that page runs `fetch("https://bank.com/api/balance")`. Your browser sends that request **with your bank cookie attached**, because it goes to `bank.com`. If the browser then let `evil.com`'s JavaScript read the response, that page could read your balance, your transactions and anything else you can see while logged in.
+
+The browser prevents this with the **same-origin policy**: JavaScript loaded from one site can't read responses from a different site unless that site explicitly says it's allowed.
+
+That tells you three things that otherwise seem strange:
+
+- **It's the browser's rule, not the server's.** The browser holds the user's cookies, so the browser is the one that has to be careful with them.
+- **curl, Node scripts and other servers ignore it.** There's no logged-in user to protect there, so they have no reason to check. That's why your smoke test passed.
+- **It protects the user, not your API.** Anyone can still call your API with curl. CORS doesn't replace authentication.
+
+### What counts as a "different site": the origin
+
+The browser compares **origins**. An origin is the scheme, the host and the port together, and if any one of them differs, it's a different origin:
+
+| Page loaded from | Calls | Same origin? |
+|---|---|---|
+| `http://localhost:5173` | `http://localhost:5173/api` | Yes |
+| `http://localhost:5173` | `http://localhost:4000/api` | **No**: different port |
+| `https://app.example.com` | `https://api.example.com` | **No**: different host |
+| `http://example.com` | `https://example.com` | **No**: different scheme |
+
+That's why your local setup hits this. The dashboard and the API are both on `localhost`, but on different ports, so the browser treats them as two different sites.
+
+### How your API says "this is allowed": CORS
+
+**CORS** (Cross-Origin Resource Sharing) is how a server tells the browser that it's fine for a specific other origin to read its responses. The server does it with **response headers**. The main one is:
+
+```
+Access-Control-Allow-Origin: http://localhost:5173
+```
+
+Think of the browser as a bouncer and that header as the guest list. The browser sends the request, receives the response and checks the header. If the page's origin is on the list, the JavaScript gets the response. If it isn't, the browser throws the response away and the JavaScript sees only a generic `TypeError: Failed to fetch`, with no status code. It's deliberately vague, so a malicious page can't learn anything from the failure.
+
+### Asking first: the preflight
+
+There's a gap in the guest-list check. It happens *after* the request has reached the server. For reading data that's fine: the request ran, but the page can't see the answer. For a request that **changes** something, like `POST /check-ins` or `DELETE /loads/42`, blocking the response is too late, because the change has already happened.
+
+So for those requests the browser **asks permission before sending the real request**. It first sends an automatic `OPTIONS` request, the **preflight**, which amounts to: "A page from `http://localhost:5173` wants to send a POST with the headers `content-type` and `x-api-key`. Is that allowed?" The server answers with its guest list. Only if the answer says yes does the browser send the real POST.
 
 ```mermaid
 sequenceDiagram
-    participant B as Browser on port 5173
+    participant B as Browser (page on port 5173)
     participant A as API on port 4000
-    B->>A: OPTIONS /check-ins<br/>Origin, Access-Control-Request-Method POST<br/>Access-Control-Request-Headers content-type, x-api-key
-    A-->>B: 204<br/>Access-Control-Allow-Origin = the dashboard origin<br/>Access-Control-Allow-Headers content-type, x-api-key<br/>Access-Control-Max-Age 600
-    B->>A: POST /check-ins (the real request)
-    A-->>B: 201 + Access-Control-Allow-Origin
-    Note over B: JS can read the response only if the origin matches
+    B->>A: 1. OPTIONS /check-ins<br/>"page from :5173 wants to POST<br/>with content-type, x-api-key. OK?"
+    A-->>B: 2. 204 No Content<br/>Allow-Origin: http://localhost:5173<br/>Allow-Headers: content-type, x-api-key
+    B->>A: 3. POST /check-ins (the real request)
+    A-->>B: 4. 201 Created + Allow-Origin header
+    Note over B: The page's JS can read the 201<br/>because its origin is on the list
 ```
 
-The browser skips the preflight only for "simple" requests: GET, HEAD or POST, with only a short list of standard headers, and a `Content-Type` of `text/plain`, `multipart/form-data` or `application/x-www-form-urlencoded` ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS)). In practice that means **almost every JSON API call triggers a preflight**: `Content-Type: application/json` alone is enough, and so is any custom header like `x-api-key` or `idempotency-key`.
+**Which requests skip the preflight?** Only "simple" ones: GET, HEAD or POST, using only a few standard headers, with a `Content-Type` of `text/plain`, `multipart/form-data` or `application/x-www-form-urlencoded` ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS)). The list makes sense once you notice that those are exactly the requests a plain HTML `<form>` could always send to any site. Allowing them doesn't give an attacker anything new, so the browser doesn't bother asking.
 
-The fix is to tell the server which origins and headers to allow:
+Anything a form couldn't send gets a preflight. In practice that's **almost every JSON API call**: `Content-Type: application/json` alone triggers one, and so does any custom header like `x-api-key` or `idempotency-key`.
+
+### The fix
+
+Tell the API which origins may call it and which headers they may send. In Express, the `cors` middleware sets the response headers and answers the preflight for you:
 
 ```ts
 app.use(cors({
@@ -327,13 +368,15 @@ app.use(cors({
 }));
 ```
 
+When you debug, open the browser's network tab and look at the `OPTIONS` request first. If it failed or is missing the `Access-Control-Allow-*` headers, the real request was never sent.
+
 ### Failure modes
 
-- **A custom header is missing from `allowedHeaders`.** The preflight fails, so the network tab shows a blocked `OPTIONS` request rather than a 401 or 500. Your JavaScript sees only `TypeError: Failed to fetch`.
-- **`Access-Control-Allow-Origin: *` with cookies.** Browsers reject the wildcard on requests that send credentials. List the exact origins instead.
-- **Auth middleware runs before CORS.** The browser never attaches your API key to the `OPTIONS` preflight, so auth rejects it with a 401 and the real request is never sent. Mount `cors()` first.
+- **A custom header is missing from `allowedHeaders`.** The preflight answer doesn't list it, so the browser never sends the real request. The network tab shows a blocked `OPTIONS` request rather than a 401 or 500, and your JavaScript sees only `TypeError: Failed to fetch`.
+- **Auth middleware runs before CORS.** The browser never attaches your API key to the preflight, so auth rejects the `OPTIONS` with a 401, and the real request is never sent. Mount `cors()` before auth.
+- **`Access-Control-Allow-Origin: *` with cookies.** A wildcard would let *every* site read responses made with the user's cookies, which is exactly the bank attack. So browsers refuse the wildcard on requests that send credentials. List the exact origins instead.
 
-**Interview framing:** when "the frontend can't reach the API", first confirm the server is running and the URL is right, then check CORS. The tell is a failed fetch with **no status code**. Remember too that CORS is not access control: it only limits what browser JavaScript can read ([performance-and-security.md §2.5](performance-and-security.md#25-cors-is-not-a-security-boundary)).
+**Interview framing:** when "the frontend can't reach the API", first confirm the server is running and the URL is right, then check CORS. The tell is a failed fetch with **no status code**, and a failed or missing `OPTIONS` request in the network tab. If they ask whether CORS secures the API, the answer is no. It protects *users' browsers* from malicious pages, and it does nothing about curl or other servers, so the API still needs its own auth ([performance-and-security.md §2.5](performance-and-security.md#25-cors-is-not-a-security-boundary)).
 
 ---
 

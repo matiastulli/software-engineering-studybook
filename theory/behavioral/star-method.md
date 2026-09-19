@@ -65,6 +65,37 @@ That takes about 75 seconds to say. Most of it is the Action, it says "I" throug
 
 ---
 
+## My stories
+
+### Halving a Databricks workflow's run time (12 h → 6 h)
+
+**What I have so far:** "After some days evaluating Databricks runs of one specific workflow, I updated the query and instead of 12 hours it now takes only 6 hours."
+
+That sentence covers the Action and the Result, but not yet the Situation or the Task. Below it's split into STAR, with the gaps marked `[fill in]`.
+
+| Part | What I have | What to add |
+|---|---|---|
+| **Situation** | A Databricks workflow that took 12 hours | `[fill in]` What the workflow produced and who depended on it. Why 12 hours was a problem: it missed a morning deadline, it cost too much compute (DBUs), or a failure couldn't be re-run the same day |
+| **Task** | *(missing)* | `[fill in]` Was this assigned to me, or did I notice it and take it on myself? Taking it on unasked is a stronger ownership signal |
+| **Action** | Spent several days analyzing the workflow's runs, then rewrote the query | `[fill in]` *How* I found the problem (Spark UI, `explain()`, run-time history per task), *what* the problem was (a shuffle, skew, a full scan with no pruning, a bad join, reprocessing all history), *what* I changed, and any option I considered and rejected |
+| **Result** | 12 h → 6 h, a 50% reduction | `[fill in]` What that unlocked (data ready before the business day, a same-day re-run is now possible) and the approximate cost saved per run or per month. Then the lesson |
+
+**Draft answer** (replace the brackets before practicing it out loud):
+
+> **Situation:** "We had a Databricks workflow that built `[what it produced]` for `[who used it]`, and it took 12 hours to run. That meant `[the consequence: data arrived late / it cost X per run / a failure couldn't be re-run the same day]`."
+>
+> **Task:** "`[I was asked to / I decided to]` find out why it was so slow and bring the run time down."
+>
+> **Action:** "Rather than guessing, I spent a few days going through the workflow's runs to find where the time actually went. `[Using the Spark UI / the task durations]`, I found that `[the root cause]`. I rewrote the query to `[the change]`. `[Optionally: I considered scaling up the cluster instead, but that would have raised the cost without fixing the cause.]`"
+>
+> **Result:** "The run time dropped from 12 hours to 6, half of what it was. That meant `[the business effect]` and saved roughly `[cost]`. The lesson I took is `[e.g. measure before optimizing: the slow part wasn't where I first assumed]`."
+
+**Follow-up questions to be ready for:** "What exactly was slow?", "How did you confirm the output was still correct after the rewrite?" (for example, comparing row counts and totals between the old and new versions), and "Why not just use a bigger cluster?"
+
+**Questions this story can answer:** a time you improved a system, a performance problem you solved, ownership, a technical decision.
+
+---
+
 ## Preparing: build a story bank
 
 You don't need a separate story for every possible question. Prepare **4–6 strong stories** and learn to point each one at different questions. Cover at least these:
