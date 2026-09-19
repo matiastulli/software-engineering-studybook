@@ -98,6 +98,7 @@ const GROUPS = [
   ["backend",            "🐍 Backend & APIs"],
   ["frontend",           "🌐 Frontend"],
   ["ai",                 "🤖 AI & LLMs"],
+  ["behavioral",         "🗣️  Behavioral"],
   [".",                  "★ General"]
 ];
 const label = k => (GROUPS.find(g => g[0] === k) || [k, k])[1];

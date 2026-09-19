@@ -17,6 +17,7 @@ Interview prep for senior data engineering, system design and Forward Deployed E
 | [backend/](backend/) | Python, graph algorithms, Node/Express, REST APIs & webhooks, web performance & security | [python-general.md](backend/python-general.md) |
 | [frontend/](frontend/) | React and web vocabulary for engineers whose home turf isn't frontend | [frontend-concepts.md](frontend/frontend-concepts.md) |
 | [ai/](ai/llm-prompting-and-evals.md) | Working with LLMs: prompting, agents and evals | [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) |
+| [behavioral/](behavioral/star-method.md) | Answering "tell me about a time..." questions with the STAR method | [star-method.md](behavioral/star-method.md) |
 | [questions/](questions/README.md) | The Q&A bank: model answers with collapsed reveals, used by mix mode | [questions/README.md](questions/README.md) |
 
 ### Every doc
@@ -48,6 +49,8 @@ Interview prep for senior data engineering, system design and Forward Deployed E
 | [frontend-concepts.md](frontend/frontend-concepts.md) | Hook vs webhook, middleware in three frameworks, components/props/state, CSR vs SSR vs SSG, bundlers |
 | **AI** | |
 | [llm-prompting-and-evals.md](ai/llm-prompting-and-evals.md) | Using Claude Code in a live interview (Tetris walkthrough, planning with a strong model and building with a cheaper one, PLAN.md), the agent loop, system prompt structure, structured outputs, evals and judge calibration, latency and cost |
+| **Behavioral** | |
+| [star-method.md](behavioral/star-method.md) | The STAR structure for behavioral answers, a weak vs strong worked example, building a 4–6 story bank, failure modes |
 
 ---
 

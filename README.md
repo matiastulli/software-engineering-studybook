@@ -39,6 +39,7 @@ answer its self-check out loud.
 | `theory/software-design/` | Design patterns and architecture styles, kept to the set that actually gets asked |
 | `theory/ai/` | Prompting a coding agent in a live interview, and building LLM agents: guardrails, evals |
 | `theory/frontend/` | React and web vocabulary for engineers whose home turf isn't the frontend |
+| `theory/behavioral/` | The STAR method for "tell me about a time..." questions, with a worked example and a story bank to prepare |
 | `theory/questions/` | The 198-question bank with model answers, which powers mix mode |
 | `practical/` | Hands-on drills: 25 Python exercises, SQL and Snowflake scripts, a PySpark set, and typing drills for rebuilding fluency under time pressure |
 | `tools/` | The builder and its vendored dependencies |
